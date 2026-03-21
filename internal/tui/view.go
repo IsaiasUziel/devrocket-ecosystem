@@ -250,11 +250,29 @@ func (m Model) viewResult() string {
 		b.WriteString(titleStyle.Render("  Next Steps:"))
 		b.WriteString("\n\n")
 		b.WriteString(fmt.Sprintf("  1. %s to apply terminal config\n", accentStyle.Render("Restart Ghostty")))
-		b.WriteString(fmt.Sprintf("  2. %s to reload tmux\n", accentStyle.Render("tmux source ~/.tmux.conf")))
+		b.WriteString(fmt.Sprintf("  2. If you installed from outside tmux, run %s\n", accentStyle.Render("tmux source ~/.tmux.conf")))
 		b.WriteString(fmt.Sprintf("  3. Press %s inside tmux for TPM plugins\n", accentStyle.Render("C-a + I")))
 		b.WriteString(fmt.Sprintf("  4. Open %s and wait for LazyVim sync\n", accentStyle.Render("nvim")))
 		b.WriteString(fmt.Sprintf("  5. Edit %s for private aliases\n", accentStyle.Render("~/.zshrc.local")))
 		b.WriteString(fmt.Sprintf("  6. Press %s for cheatsheet popup\n", accentStyle.Render("Alt+c")))
+
+		for _, r := range m.results {
+			if len(r.Notes) == 0 {
+				continue
+			}
+			b.WriteString("\n")
+			b.WriteString(titleStyle.Render(fmt.Sprintf("  %s Notes:", r.Component)))
+			b.WriteString("\n")
+			for _, note := range r.Notes {
+				style := dimStyle
+				if strings.Contains(note, "reloaded automatically") {
+					style = successStyle
+				} else if strings.Contains(note, "not reloaded automatically") {
+					style = warnStyle
+				}
+				b.WriteString(fmt.Sprintf("  • %s\n", style.Render(note)))
+			}
+		}
 	} else if m.action == ActionUninstall {
 		if m.resultError != nil {
 			b.WriteString(errorStyle.Render(fmt.Sprintf("\n  ✗ Uninstall failed: %v\n", m.resultError)))

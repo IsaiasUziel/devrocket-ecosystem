@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -18,6 +19,7 @@ type InstallResult struct {
 	Error     error
 	Files     []string
 	Skipped   bool
+	Notes     []string
 }
 
 // InstallComponent extracts embedded files for a component into their target locations.
@@ -52,6 +54,14 @@ func InstallComponent(comp config.Component, embedFS fs.FS, backup bool) Install
 				return result
 			}
 			result.Files = append(result.Files, target.Dest)
+		}
+	}
+
+	if comp.Name == "Tmux" {
+		if err := reloadTmuxConfig(filepath.Join(config.HomeDir(), ".tmux.conf")); err != nil {
+			result.Notes = append(result.Notes, fmt.Sprintf("tmux config installed but not reloaded automatically: %v", err))
+		} else {
+			result.Notes = append(result.Notes, "tmux config reloaded automatically")
 		}
 	}
 
@@ -136,4 +146,21 @@ func extractDir(fsys fs.FS, srcDir, dstDir string) ([]string, error) {
 	})
 
 	return files, err
+}
+
+func reloadTmuxConfig(configPath string) error {
+	if os.Getenv("TMUX") == "" {
+		return fmt.Errorf("not running inside tmux; run 'tmux source-file ~/.tmux.conf'")
+	}
+
+	cmd := exec.Command("tmux", "source-file", configPath)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		msg := strings.TrimSpace(string(out))
+		if msg == "" {
+			return err
+		}
+		return fmt.Errorf("%s", msg)
+	}
+
+	return nil
 }
