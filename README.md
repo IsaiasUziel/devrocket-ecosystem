@@ -62,7 +62,7 @@ gentleman-dots
 ## 🚀 Installation
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/devrocket-ecosystem.git ~/devrocket-ecosystem
+git clone https://github.com/IsaiasUziel/devrocket-ecosystem.git ~/devrocket-ecosystem
 cd ~/devrocket-ecosystem
 ./install.sh
 ```
