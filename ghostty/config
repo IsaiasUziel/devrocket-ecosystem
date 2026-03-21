@@ -1,0 +1,115 @@
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║                         GENTLEMAN DOTS - GHOSTTY                             ║
+# ║                          Optimized for Neovim                                ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
+
+
+# ┌──────────────────────────────────────────────────────────────────────────────┐
+# │                                   FONT                                       │
+# └──────────────────────────────────────────────────────────────────────────────┘
+
+font-family = "IosevkaTerm Nerd Font"
+font-size = 16
+font-style = semibold
+
+# ┌──────────────────────────────────────────────────────────────────────────────┐
+# │                                  WINDOW                                      │
+# └──────────────────────────────────────────────────────────────────────────────┘
+
+background-opacity = 0.95
+background-blur-radius = 20
+# background-image = /path/to/your/image.png
+background-image-opacity = 0.1
+
+window-decoration = true
+window-padding-color = extend
+window-step-resize = false
+window-padding-balance = true
+window-height = 35
+window-width = 150
+
+gtk-tabs-location = hidden
+
+
+# ┌──────────────────────────────────────────────────────────────────────────────┐
+# │                                  SHADER                                      │
+# └──────────────────────────────────────────────────────────────────────────────┘
+
+custom-shader = shaders/cursor_smear_gentleman.glsl
+
+
+# ┌──────────────────────────────────────────────────────────────────────────────┐
+# │                            INPUT / KEYBINDINGS                               │
+# └──────────────────────────────────────────────────────────────────────────────┘
+
+# macOS Alt (Option) key: LEFT Option → sends ESC prefix (\e) so tmux/nvim get Alt sequences
+# RIGHT Option → stays as macOS special chars (á, é, ü, etc.)
+macos-option-as-alt = left
+
+# Unbind macOS default Option+arrow behavior so Alt+arrows pass through as escape sequences
+keybind = alt+right=esc:f
+keybind = alt+left=esc:b
+
+# Explicitly unbind Alt+h/j/k/l so they pass through to tmux as \eh \ej \ek \el
+# (Ghostty may intercept them even without an explicit binding due to macOS modifier handling)
+# Tmux pane navigation uses C-h/j/k/l via vim-tmux-navigator — these are for programs
+# inside the terminal (e.g., fzf, lazygit, or any ncurses app that uses Alt+hjkl)
+keybind = alt+h=unbind
+keybind = alt+j=unbind
+keybind = alt+k=unbind
+keybind = alt+l=unbind
+
+# Ghostty splits: NOT used (tmux handles all multiplexing)
+# Alt+v, Alt+d, Ctrl+Shift+h/j/k/l — all intentionally NOT bound here
+
+# ── Cmd+K: clear screen ────────────────────────────────────────────────────────
+# NOTE: clear_screen sends Ctrl+L to the foreground process.
+# Works at a bare shell prompt. Inside tmux: tmux may intercept ^L.
+# Inside nvim: nvim handles ^L itself (redraw).
+# If Cmd+K stops working inside tmux, run: bind-key C-l send-keys C-l
+# in ~/.tmux.conf (allows tmux to forward ^L on prefix+C-l).
+keybind = cmd+k=clear_screen
+
+# Shift+Enter → sends ESC + Enter sequence (nvim interprets as <S-CR> for newline without submit)
+keybind = shift+enter=text:\x1b\r
+
+# Open file with nvim (write 'nvim' first, then use this keybinding)
+keybind = alt+s=write_screen_file:paste
+
+# ── Global keybinds (work even when Ghostty is in background) ──────────────────
+# Toggle Ghostty window visibility from anywhere
+keybind = global:cmd+`=toggle_visibility
+# Toggle quick terminal (quake-style dropdown)
+keybind = global:cmd+ctrl+`=toggle_quick_terminal
+
+
+# ┌──────────────────────────────────────────────────────────────────────────────┐
+# │                           GENTLEMAN THEME                                    │
+# └──────────────────────────────────────────────────────────────────────────────┘
+
+# --- Base Colors ---
+background = 1f1e27
+foreground = c8c093
+cursor-color = e0c15a
+selection-background = 263356
+selection-foreground = f3f6f9
+
+# --- Normal Colors ---
+palette = 0=#06080f
+palette = 1=#cb7c94
+palette = 2=#b7cc85
+palette = 3=#ffe066
+palette = 4=#7fb4ca
+palette = 5=#ff8dd7
+palette = 6=#7aa89f
+palette = 7=#f3f6f9
+
+# --- Bright Colors ---
+palette = 8=#8a8fa3
+palette = 9=#de8fa8
+palette = 10=#d1e8a9
+palette = 11=#fff7b1
+palette = 12=#a3d4d5
+palette = 13=#ffaeea
+palette = 14=#7fb4ca
+palette = 15=#f3f6f9

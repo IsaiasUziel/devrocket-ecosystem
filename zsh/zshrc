@@ -1,0 +1,150 @@
+echo "✝ simul iustus et peccator"
+
+# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
+# Initialization code that may require console input (password prompts, [y/n]
+# confirmations, etc.) must go above this block; everything else may go below.
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
+export ZSH="$HOME/.oh-my-zsh"
+
+# Detect Termux
+IS_TERMUX=0
+if [[ -n "$TERMUX_VERSION" ]] || [[ -d "/data/data/com.termux" ]]; then
+    IS_TERMUX=1
+fi
+
+# Set PATH based on platform
+if [[ $IS_TERMUX -eq 1 ]]; then
+    # Termux - use PREFIX for binaries
+    export PATH="$PREFIX/bin:$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+else
+    export PATH="$HOME/.local/bin:$HOME/.opencode/bin:$HOME/.cargo/bin:$HOME/.volta/bin:$HOME/.bun/bin:$HOME/.nix-profile/bin:/nix/var/nix/profiles/default/bin:/usr/local/bin:$HOME/.config:$HOME/.cargo/bin:/usr/local/lib/*:$PATH"
+fi
+
+# Set nvim as default editor for opencode and other tools
+export EDITOR="nvim"
+export VISUAL="nvim"
+
+if [[ $- == *i* ]]; then
+    # Commands to run in interactive sessions can go here
+fi
+
+export LS_COLORS="di=38;5;67:ow=48;5;60:ex=38;5;132:ln=38;5;144:*.tar=38;5;180:*.zip=38;5;180:*.jpg=38;5;175:*.png=38;5;175:*.mp3=38;5;175:*.wav=38;5;175:*.txt=38;5;223:*.sh=38;5;132"
+if [[ "$(uname)" == "Darwin" ]]; then
+  alias ls='ls --color=auto'
+else
+  alias ls='gls --color=auto'
+fi
+
+# FZF aliases
+alias fzfbat="fzf --preview 'bat --style=numbers --color=always --theme=gruvbox-dark {}'"
+alias fzfnvim='nvim $(fzf)'
+
+# Tmux alias
+alias tmux-ls='tmux ls | grep sdg'
+
+# Personal aliases go in ~/.zshrc.local (see zshrc.local.example)
+
+# Homebrew setup (skip on Termux)
+if [[ $IS_TERMUX -eq 0 ]]; then
+    if [[ "$(uname)" == "Darwin" ]]; then
+        # macOS - check for Apple Silicon vs Intel
+        if [[ -f "/opt/homebrew/bin/brew" ]]; then
+            # Apple Silicon (M1/M2/M3)
+            BREW_BIN="/opt/homebrew/bin"
+        elif [[ -f "/usr/local/bin/brew" ]]; then
+            # Intel Mac
+            BREW_BIN="/usr/local/bin"
+        fi
+    else
+        # Linux
+        BREW_BIN="/home/linuxbrew/.linuxbrew/bin"
+    fi
+
+    # Only eval brew shellenv if brew is installed
+    if [[ -n "$BREW_BIN" && -f "$BREW_BIN/brew" ]]; then
+        eval "$($BREW_BIN/brew shellenv)"
+    fi
+fi
+
+# Powerlevel10k theme only (must load before oh-my-zsh)
+if [[ $IS_TERMUX -eq 1 ]]; then
+    [[ -f "$PREFIX/share/powerlevel10k/powerlevel10k.zsh-theme" ]] && source "$PREFIX/share/powerlevel10k/powerlevel10k.zsh-theme"
+else
+    source $(dirname $BREW_BIN)/share/powerlevel10k/powerlevel10k.zsh-theme
+fi
+
+export FZF_DEFAULT_COMMAND="fd --hidden --strip-cwd-prefix --exclude .git"
+export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+export FZF_ALT_C_COMMAND="fd --type=d --hidden --strip-cwd-prefix --exclude .git"
+
+WM_VAR="/$TMUX"
+# change with ZELLIJ
+WM_CMD="tmux"
+# change with zellij
+
+function start_if_needed() {
+    if [[ $- == *i* ]] && [[ -z "${WM_VAR#/}" ]] && [[ -t 1 ]]; then
+       #exec $WM_CMD new-session -A -s "$(basename $(tty))"
+        # exec $WM_CMD new-session -A -s "sdg-$(printf '%x' $(date +%s))"
+         exec $WM_CMD
+    fi
+}
+
+
+#plugins
+plugins=(
+  git
+)
+
+source $ZSH/oh-my-zsh.sh
+
+# ── Zsh plugins (MUST load AFTER oh-my-zsh/compinit) ──────────────────────────
+# zsh-autocomplete: MUST be first after compinit — it hooks into the completion system
+if [[ $IS_TERMUX -eq 1 ]]; then
+    [[ -f "$PREFIX/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh" ]] && source "$PREFIX/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh"
+else
+    source $(dirname $BREW_BIN)/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh
+fi
+
+# carapace: load AFTER autocomplete; prevent it from overriding Tab
+export CARAPACE_BRIDGES='zsh,fish,bash,inshellisense'
+zstyle ':completion:*' format $'\e[2;37mCompleting %d\e[m'
+source <(carapace _carapace)
+# Restore Tab to zsh-autocomplete after carapace clobbers it
+bindkey '^I' menu-select
+
+# fzf: load after; restore Tab afterwards since fzf --zsh also rebinds ^I
+eval "$(fzf --zsh)"
+# Restore Tab to zsh-autocomplete (fzf overwrites it with fzf-completion)
+bindkey '^I' menu-select
+bindkey '^[[Z' reverse-menu-complete   # Shift+Tab goes backwards
+
+eval "$(zoxide init zsh)"
+eval "$(atuin init zsh)"
+
+# zsh-autosuggestions: after autocomplete (autocomplete manages its precmd order)
+if [[ $IS_TERMUX -eq 1 ]]; then
+    [[ -f "$PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh" ]] && source "$PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
+else
+    source $(dirname $BREW_BIN)/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+fi
+
+# zsh-syntax-highlighting: MUST be LAST — always
+if [[ $IS_TERMUX -eq 1 ]]; then
+    [[ -f "$PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]] && source "$PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+else
+    source $(dirname $BREW_BIN)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+fi
+
+# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+start_if_needed
+
+# ─── Private/Local Overrides ───────────────────────────────────────────────────
+# Source local config for machine-specific aliases, credentials, etc.
+# This file is gitignored and never committed.
+[[ -f ~/.zshrc.local ]] && source ~/.zshrc.local

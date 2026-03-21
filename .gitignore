@@ -1,0 +1,23 @@
+# Private configs (never commit)
+*.local
+.zshrc.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+*.swp
+*.swo
+*~
+.netrw*
+
+# Env
+.env*
+!.env.example
+
+# Neovim
+lazy-lock.json
+
+# Node
+node_modules/

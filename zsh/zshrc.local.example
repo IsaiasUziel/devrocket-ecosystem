@@ -1,0 +1,23 @@
+# ─── DevRocket Ecosystem: Private Config ────────────────────────
+# Copy this file to ~/.zshrc.local and customize.
+# This file is gitignored — your secrets stay local.
+#
+# Examples:
+
+# Database aliases
+# alias db='mysql -u root -pYOUR_PASSWORD'
+# alias pgdb='psql -U postgres -d mydb'
+
+# Project shortcuts
+# alias myproject='cd ~/path/to/project'
+
+# SSH aliases
+# alias ssh-dev='ssh -i ~/.ssh/mykey user@192.168.1.100'
+# alias ssh-prod='ssh -i ~/.ssh/mykey user@your.server.com'
+
+# API keys
+# export OPENAI_API_KEY="sk-..."
+# export ANTHROPIC_API_KEY="sk-ant-..."
+
+# Custom editor aliases
+# alias notes='nvim ~/path/to/notes'

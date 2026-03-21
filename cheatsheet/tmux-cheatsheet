@@ -1,0 +1,371 @@
+#!/usr/bin/env bash
+# tmux-cheatsheet — Filterable ecosystem cheatsheet popup with category cycling
+# Triggered by Alt+c in tmux
+# Supports: --entries CATEGORY | --next-cat | --prev-cat | (default: popup)
+
+# ─── Colors (defined at top — available for ALL invocation modes) ────────────
+YELLOW='\033[1;33m'
+CYAN='\033[36m'
+GREEN='\033[32m'
+DIM='\033[2m'
+RESET='\033[0m'
+BOLD='\033[1m'
+
+# ─── Constants ────────────────────────────────────────────────────────────────
+SCRIPT="$(realpath "$0")"
+CATEGORIES=(ALL TMUX NVIM VIM-MOTIONS ZSH GHOSTTY TIPS)
+STATE_FILE="/tmp/tmux-cheatsheet-cat"
+
+# ─── Entry rendering ─────────────────────────────────────────────────────────
+entries() {
+    local filter="${1:-ALL}"
+    local show_headers=false
+    [[ "$filter" == "ALL" ]] && show_headers=true
+
+    # ─── TMUX ────────────────────────────────────────────────────────────────
+    if [[ "$filter" == "ALL" || "$filter" == "TMUX" ]]; then
+        if $show_headers; then
+            printf "${YELLOW}${BOLD}  ═══ TMUX (prefix: Ctrl+a) ══════════════════════════════════════${RESET}\n"
+            printf "\n"
+            printf "${DIM}  ── Sesiones ──────────────────────────────────────────────────────${RESET}\n"
+        fi
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Sesiones" "C-a → d" "Detach (salir sin cerrar)"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Sesiones" "C-a → s" "Listar y switchear sesiones"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Sesiones" "C-a → \$" "Renombrar sesión"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Sesiones" "C-a → K" "Matar todas las otras sesiones"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Sesiones" "Alt+g" "Popup flotante (scratch)"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Sesiones" "C-a → s → x" "Matar sesión seleccionada (picker)"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Sesiones" "C-a → s → ↑↓" "Navegar lista de sesiones"
+
+        if $show_headers; then
+            printf "\n"
+            printf "${DIM}  ── Windows (Pestañas) ────────────────────────────────────────────${RESET}\n"
+        fi
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Windows" "Alt+1-9" "Saltar a window por número (SIN prefix!)"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Windows" "Alt+n" "Next window (SIN prefix!)"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Windows" "Alt+p" "Previous window (SIN prefix!)"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Windows" "Alt+t" "Nueva window (SIN prefix!)"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Windows" "Alt+w" "Cerrar window (SIN prefix!)"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Windows" "C-a → w" "Picker de windows"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Windows" "C-a → ," "Renombrar window"
+
+        if $show_headers; then
+            printf "\n"
+            printf "${DIM}  ── Paneles (Splits) ──────────────────────────────────────────────${RESET}\n"
+        fi
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Paneles" "C-a → v" "Split vertical (izq/der)"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Paneles" "C-a → d" "Split horizontal (arriba/abajo)"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Paneles" "C-a → z" "Zoom panel (toggle fullscreen)"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Paneles" "C-a → x" "Cerrar panel"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Paneles" "C-a → espacio" "Rotar layouts"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Paneles" "C-a → !" "Convertir panel en window propia"
+
+        if $show_headers; then
+            printf "\n"
+            printf "${DIM}  ── Navegación (sin prefix) ───────────────────────────────────────${RESET}\n"
+        fi
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Navegación" "Ctrl+h/j/k/l" "Moverse entre paneles ↔ nvim"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Navegación" "Ctrl+\\" "Último panel activo"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Navegación" "Ctrl+Space" "Siguiente panel"
+
+        if $show_headers; then
+            printf "\n"
+            printf "${DIM}  ── Copy Mode ─────────────────────────────────────────────────────${RESET}\n"
+        fi
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Copy Mode" "C-a → [" "Entrar copy mode (vi keys)"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Copy Mode" "v" "Selección visual"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Copy Mode" "y" "Copiar al clipboard"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Copy Mode" "q" "Salir copy mode"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Copy Mode" "/" "Buscar texto (en copy mode)"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Copy Mode" "n / N" "Siguiente/anterior resultado"
+
+        $show_headers && printf "\n"
+    fi
+
+    # ─── NEOVIM / LAZYVIM ────────────────────────────────────────────────────
+    if [[ "$filter" == "ALL" || "$filter" == "NVIM" ]]; then
+        if $show_headers; then
+            printf "${YELLOW}${BOLD}  ═══ NEOVIM / LAZYVIM (leader: Space) ═══════════════════════════${RESET}\n"
+            printf "\n"
+            printf "${DIM}  ── Archivos ──────────────────────────────────────────────────────${RESET}\n"
+        fi
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Archivos" "<leader>ff" "Buscar archivo por nombre"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Archivos" "<leader>fg" "Grep en proyecto"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Archivos" "<leader>fb" "Buscar en buffers"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Archivos" "<leader>fr" "Archivos recientes"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Archivos" "-" "Oil: directorio padre"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Archivos" "<leader>E" "Oil: floating"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Archivos" "<leader>e" "Toggle file explorer"
+
+        if $show_headers; then
+            printf "\n"
+            printf "${DIM}  ── Harpoon ───────────────────────────────────────────────────────${RESET}\n"
+        fi
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Harpoon" "<leader>ha" "Agregar archivo a Harpoon"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Harpoon" "<leader>H" "UI de Harpoon"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Harpoon" "<leader>1-5" "Saltar a archivo marcado"
+
+        if $show_headers; then
+            printf "\n"
+            printf "${DIM}  ── Movimiento ────────────────────────────────────────────────────${RESET}\n"
+        fi
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Movimiento" "s + 2chars" "Flash jump"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Movimiento" "S" "Flash Treesitter"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Movimiento" "Ctrl+h/j/k/l" "Moverse entre splits"
+
+        if $show_headers; then
+            printf "\n"
+            printf "${DIM}  ── Splits / Windows ──────────────────────────────────────────────${RESET}\n"
+        fi
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Splits" "<leader>|" "Split vertical"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Splits" "<leader>-" "Split horizontal"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Splits" "<leader>wd" "Cerrar window"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Splits" "<leader>z" "Zen Mode"
+
+        if $show_headers; then
+            printf "\n"
+            printf "${DIM}  ── Buffers ───────────────────────────────────────────────────────${RESET}\n"
+        fi
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Buffers" "Shift+h" "Buffer anterior"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Buffers" "Shift+l" "Buffer siguiente"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Buffers" "<leader>bd" "Cerrar buffer"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Buffers" "<leader>bq" "Cerrar todos excepto actual"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Buffers" "<leader>," "Listar buffers"
+
+        if $show_headers; then
+            printf "\n"
+            printf "${DIM}  ── LSP ───────────────────────────────────────────────────────────${RESET}\n"
+        fi
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "LSP" "gd" "Ir a definición"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "LSP" "gr" "Ver referencias"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "LSP" "gpd" "Preview definición"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "LSP" "gpi" "Preview implementación"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "LSP" "gP" "Cerrar previews"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "LSP" "<leader>cs" "Symbols outline"
+
+        if $show_headers; then
+            printf "\n"
+            printf "${DIM}  ── Git ───────────────────────────────────────────────────────────${RESET}\n"
+        fi
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Git" "<leader>gb" "Git blame"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Git" "<leader>go" "Abrir en browser"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Git" "<leader>gg" "LazyGit"
+
+        $show_headers && printf "\n"
+    fi
+
+    # ─── VIM-MOTIONS ─────────────────────────────────────────────────────────
+    if [[ "$filter" == "ALL" || "$filter" == "VIM-MOTIONS" ]]; then
+        if $show_headers; then
+            printf "${YELLOW}${BOLD}  ═══ VIM-MOTIONS (vim fundamentals) ══════════════════════════════${RESET}\n"
+            printf "\n"
+            printf "${DIM}  ── Movimiento básico ─────────────────────────────────────────────${RESET}\n"
+        fi
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Movimiento" "h / j / k / l" "Izq / abajo / arriba / der"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Movimiento" "w / W" "Siguiente palabra / PALABRA"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Movimiento" "b / B" "Anterior palabra / PALABRA"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Movimiento" "e / E" "Final de palabra / PALABRA"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Movimiento" "0 / ^ / \$" "Inicio línea / primer char / final"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Movimiento" "gg / G" "Inicio / final del archivo"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Movimiento" "{ / }" "Párrafo anterior / siguiente"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Movimiento" "f{c} / F{c}" "Saltar a char adelante / atrás"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Movimiento" "t{c} / T{c}" "Saltar hasta char adelante / atrás"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Movimiento" "%" "Ir al bracket/paren matching"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Movimiento" "Ctrl+d / Ctrl+u" "Media página abajo / arriba"
+
+        if $show_headers; then
+            printf "\n"
+            printf "${DIM}  ── Operadores + motions ──────────────────────────────────────────${RESET}\n"
+        fi
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Operadores" "d{motion}" "Borrar (dw, d\$, dG, dd)"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Operadores" "c{motion}" "Cambiar (cw, c\$, cc)"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Operadores" "y{motion}" "Copiar (yw, y\$, yy)"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Operadores" ">>{motion} / <<" "Indentar / desindentar"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Operadores" "gu / gU" "Minúscula / MAYÚSCULA"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Operadores" "." "Repetir último cambio"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Operadores" "D / C / Y" "d\$ / c\$ / yy (shortcuts)"
+
+        if $show_headers; then
+            printf "\n"
+            printf "${DIM}  ── Modo Visual ───────────────────────────────────────────────────${RESET}\n"
+        fi
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Visual" "v" "Modo visual (caracteres)"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Visual" "V" "Modo visual (líneas)"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Visual" "Ctrl+v" "Modo visual (bloque)"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Visual" "gv" "Re-seleccionar última selección"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Visual" "o" "Ir al otro extremo de selección"
+
+        if $show_headers; then
+            printf "\n"
+            printf "${DIM}  ── Text Objects ──────────────────────────────────────────────────${RESET}\n"
+        fi
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "TextObjects" "iw / aw" "Inner/around word"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "TextObjects" "i\" / a\"" "Inner/around comillas dobles"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "TextObjects" "i' / a'" "Inner/around comillas simples"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "TextObjects" "i{ / a{ (iB/aB)" "Inner/around llaves"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "TextObjects" "i( / a( (ib/ab)" "Inner/around paréntesis"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "TextObjects" "i[ / a[" "Inner/around corchetes"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "TextObjects" "it / at" "Inner/around tag HTML"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "TextObjects" "ip / ap" "Inner/around párrafo"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "TextObjects" "is / as" "Inner/around oración"
+
+        if $show_headers; then
+            printf "\n"
+            printf "${DIM}  ── Búsqueda ──────────────────────────────────────────────────────${RESET}\n"
+        fi
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Búsqueda" "/{texto}" "Buscar adelante"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Búsqueda" "?{texto}" "Buscar atrás"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Búsqueda" "n / N" "Siguiente / anterior resultado"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Búsqueda" "* / #" "Buscar palabra bajo cursor ↓/↑"
+
+        if $show_headers; then
+            printf "\n"
+            printf "${DIM}  ── Marks, Registros, Macros ──────────────────────────────────────${RESET}\n"
+        fi
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Marks" "m{a-z}" "Crear mark local"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Marks" "'{a-z}" "Saltar a mark"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Marks" "''" "Saltar a posición anterior"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Registros" "\"{a-z}y / \"{a-z}p" "Copiar/pegar a registro"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Registros" "\"+y / \"+p" "Copiar/pegar clipboard sistema"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Registros" "\"0p" "Pegar último yank (no delete)"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Macros" "q{a-z} → acciones → q" "Grabar macro"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Macros" "@{a-z} / @@" "Ejecutar macro / repetir última"
+
+        if $show_headers; then
+            printf "\n"
+            printf "${DIM}  ── Undo / Replace / Substitute ──────────────────────────────────${RESET}\n"
+        fi
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Undo" "u / Ctrl+r" "Undo / redo"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Undo" "U" "Undo toda la línea"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Replace" "r{c}" "Reemplazar un carácter"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Replace" "R" "Modo reemplazo continuo"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Substitute" ":%s/old/new/g" "Reemplazar en todo el archivo"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Substitute" ":'<,'>s/old/new/g" "Reemplazar en selección"
+
+        $show_headers && printf "\n"
+    fi
+
+    # ─── ZSH ─────────────────────────────────────────────────────────────────
+    if [[ "$filter" == "ALL" || "$filter" == "ZSH" ]]; then
+        if $show_headers; then
+            printf "${YELLOW}${BOLD}  ═══ ZSH ══════════════════════════════════════════════════════════${RESET}\n"
+            printf "\n"
+            printf "${DIM}  ── Shell ─────────────────────────────────────────────────────────${RESET}\n"
+        fi
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Shell" "Ctrl+R" "Historial inteligente (Atuin)"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Shell" "Ctrl+T" "Buscar archivo (fzf)"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Shell" "Alt+C" "Buscar directorio (fzf)"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Shell" "z <dir>" "Zoxide: saltar a directorio"
+
+        if $show_headers; then
+            printf "\n"
+            printf "${DIM}  ── Aliases ───────────────────────────────────────────────────────${RESET}\n"
+        fi
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Aliases" "fzfbat" "fzf + preview bat"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Aliases" "fzfnvim" "fzf → abrir en nvim"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Aliases" "tmux-ls" "Listar sesiones tmux"
+
+        $show_headers && printf "\n"
+    fi
+
+    # ─── GHOSTTY ─────────────────────────────────────────────────────────────
+    if [[ "$filter" == "ALL" || "$filter" == "GHOSTTY" ]]; then
+        if $show_headers; then
+            printf "${YELLOW}${BOLD}  ═══ GHOSTTY ═══════════════════════════════════════════════════════${RESET}\n"
+            printf "\n"
+            printf "${DIM}  ── Terminal ──────────────────────────────────────────────────────${RESET}\n"
+        fi
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Terminal" "Cmd+K" "Limpiar pantalla"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Terminal" "Shift+Enter" "Enviar Esc+Enter"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Terminal" "Cmd++ / Cmd+-" "Zoom fuente"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Terminal" "Alt+c" "Este cheatsheet :)"
+
+        $show_headers && printf "\n"
+    fi
+
+    # ─── TIPS ─────────────────────────────────────────────────────────────────
+    if [[ "$filter" == "ALL" || "$filter" == "TIPS" ]]; then
+        if $show_headers; then
+            printf "${YELLOW}${BOLD}  ═══ TIPS ══════════════════════════════════════════════════════════${RESET}\n"
+            printf "\n"
+            printf "${DIM}  ── Tmux CLI ──────────────────────────────────────────────────────${RESET}\n"
+        fi
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Tips" "tmux kill-server" "Matar TODO tmux (nuclear option)"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Tips" "tmux ls" "Listar todas las sesiones"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Tips" "tmux a -t nombre" "Attach a sesión por nombre"
+        printf "  ${CYAN}%-14s${RESET}  ${GREEN}%-28s${RESET}  %s\n" "Tips" "C-a → : → setw sync..." "Escribir en TODOS los paneles"
+
+        $show_headers && printf "\n"
+    fi
+}
+
+# ─── Category cycling helpers ─────────────────────────────────────────────────
+_make_header() {
+    local cat_name="$1"
+    if [[ "$cat_name" == "ALL" ]]; then
+        echo "  [ALL] Tab→next category · S-Tab→prev · type to filter · ESC=close"
+    else
+        echo "  [$cat_name] Tab→next · S-Tab→prev · type to filter · ESC=close"
+    fi
+}
+
+next_category() {
+    local current
+    current=$(cat "$STATE_FILE" 2>/dev/null || echo 0)
+    local next=$(( (current + 1) % ${#CATEGORIES[@]} ))
+    echo "$next" > "$STATE_FILE"
+    local cat_name="${CATEGORIES[$next]}"
+    local header
+    header="$(_make_header "$cat_name")"
+    echo "reload($SCRIPT --entries $cat_name)+change-header($header)"
+}
+
+prev_category() {
+    local current
+    current=$(cat "$STATE_FILE" 2>/dev/null || echo 0)
+    local total=${#CATEGORIES[@]}
+    local prev=$(( (current - 1 + total) % total ))
+    echo "$prev" > "$STATE_FILE"
+    local cat_name="${CATEGORIES[$prev]}"
+    local header
+    header="$(_make_header "$cat_name")"
+    echo "reload($SCRIPT --entries $cat_name)+change-header($header)"
+}
+
+# ─── Main popup ───────────────────────────────────────────────────────────────
+main() {
+    echo "0" > "$STATE_FILE"
+    trap 'rm -f "$STATE_FILE"' EXIT
+
+    entries "ALL" | fzf \
+        --ansi \
+        --header="  [ALL] Tab→next category · S-Tab→prev · type to filter · ESC=close" \
+        --prompt="🔍 " \
+        --layout=reverse \
+        --border=rounded \
+        --border-label=" Cheatsheet Ecosystem " \
+        --border-label-pos=3 \
+        --no-info \
+        --no-scrollbar \
+        --color='bg:#1f1f28,bg+:#2a2a37,fg:#dcd7ba,fg+:#dcd7ba,hl:#7e9cd8,hl+:#7fb4ca,border:#54546d,header:#98bb6c,prompt:#e6c384,pointer:#ff5d62,label:#c0a36e,separator:#54546d,scrollbar:#54546d' \
+        --bind 'esc:abort' \
+        --bind 'enter:abort' \
+        --bind "tab:transform($SCRIPT --next-cat)" \
+        --bind "shift-tab:transform($SCRIPT --prev-cat)"
+}
+
+# ─── Dispatcher ───────────────────────────────────────────────────────────────
+case "${1:-}" in
+    --entries)
+        entries "${2:-ALL}"
+        ;;
+    --next-cat)
+        next_category
+        ;;
+    --prev-cat)
+        prev_category
+        ;;
+    *)
+        main
+        ;;
+esac
