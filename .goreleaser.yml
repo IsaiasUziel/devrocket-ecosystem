@@ -43,3 +43,9 @@ homebrew_casks:
       - devrocket-ecosystem
     url:
       verified: github.com/IsaiasUziel/devrocket-ecosystem/
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/devrocket-ecosystem"]
+          end
