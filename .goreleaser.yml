@@ -21,7 +21,6 @@ builds:
 
 archives:
   - id: default
-    format: tar.gz
     name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
 
 checksum:
@@ -32,15 +31,15 @@ release:
     owner: IsaiasUziel
     name: devrocket-ecosystem
 
-brews:
+homebrew_casks:
   - name: devrocket-ecosystem
     repository:
       owner: IsaiasUziel
       name: homebrew-devrocket-ecosystem
     homepage: "https://github.com/IsaiasUziel/devrocket-ecosystem"
-    description: "An opinionated terminal dev environment — Ghostty + Tmux + Neovim + Zsh"
+    description: "An opinionated terminal dev environment - Ghostty + Tmux + Neovim + Zsh"
     license: "MIT"
-    install: |
-      bin.install "devrocket-ecosystem"
-    test: |
-      system "#{bin}/devrocket-ecosystem", "--version"
+    binaries:
+      - devrocket-ecosystem
+    url:
+      verified: github.com/IsaiasUziel/devrocket-ecosystem/
