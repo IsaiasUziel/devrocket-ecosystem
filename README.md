@@ -61,19 +61,34 @@ gentleman-dots
 
 ## 🚀 Installation
 
+### Via Homebrew (recommended)
+
 ```bash
-git clone https://github.com/IsaiasUziel/devrocket-ecosystem.git ~/devrocket-ecosystem
-cd ~/devrocket-ecosystem
-./install.sh
+brew tap IsaiasUziel/devrocket-ecosystem
+brew install devrocket-ecosystem
 ```
 
-The installer will:
+### Run the installer
+
+```bash
+devrocket-ecosystem
+```
+
+### From Source
+
+```bash
+git clone https://github.com/IsaiasUziel/devrocket-ecosystem.git
+cd devrocket-ecosystem
+make build
+./bin/devrocket-ecosystem
+```
+
+The TUI installer will:
 1. ✅ Detect your OS and Homebrew prefix
 2. ✅ Check for installed tools (skips configs for missing tools)
 3. ✅ Backup your existing configs to `~/.devrocket-backup/`
-4. ✅ Create symlinks from the repo to your config locations
-5. ✅ Install TPM (Tmux Plugin Manager) if needed
-6. ✅ Create `~/.zshrc.local` for your private aliases
+4. ✅ Copy configs from the embedded binary to your config locations
+5. ✅ Create `~/.zshrc.local` for your private aliases
 
 ### After installing:
 
@@ -85,16 +100,17 @@ The installer will:
 
 ## 📁 What Gets Installed
 
-| Source (repo) | Target (system) |
-|---------------|-----------------|
-| `ghostty/config` | `~/.config/ghostty/config` |
-| `ghostty/themes/` | `~/.config/ghostty/themes/` |
-| `ghostty/shaders/` | `~/.config/ghostty/shaders/` |
-| `tmux/tmux.conf` | `~/.tmux.conf` |
-| `nvim/` | `~/.config/nvim/` |
-| `zsh/zshrc` | `~/.zshrc` |
-| `zsh/p10k.zsh` | `~/.p10k.zsh` |
-| `cheatsheet/tmux-cheatsheet` | `$BREW_PREFIX/bin/tmux-cheatsheet` |
+The TUI installer copies configs from the embedded binary (no internet required after install):
+
+| Component | Target (system) |
+|-----------|-----------------|
+| **Ghostty** | `~/.config/ghostty/` |
+| **Tmux** | `~/.tmux.conf` |
+| **Neovim** | `~/.config/nvim/` |
+| **Zsh** | `~/.zshrc`, `~/.p10k.zsh` |
+| **Cheatsheet** | `$BREW_PREFIX/bin/tmux-cheatsheet` |
+
+Each component can be individually selected or deselected in the TUI before installing.
 
 ## ⌨️ Key Bindings
 
@@ -175,14 +191,11 @@ export OPENAI_API_KEY="sk-..."
 
 ## 🗑️ Uninstall
 
-```bash
-cd ~/devrocket-ecosystem
-./uninstall.sh
-```
+Run `devrocket-ecosystem` and select **Uninstall** from the main menu.
 
 This will:
-- Remove all symlinks created by the installer
-- Restore your original configs from backup
+- Remove all configs managed by the installer
+- Restore your original configs from backup (if backup was enabled)
 - **Preserve** `~/.zshrc.local` (your private data is safe)
 
 ## 🎨 Theme

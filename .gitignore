@@ -21,3 +21,9 @@ lazy-lock.json
 
 # Node
 node_modules/
+
+# Go
+bin/
+dist/
+*.exe
+coverage.out

@@ -1,0 +1,46 @@
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: devrocket-ecosystem
+    main: ./cmd/devrocket
+    binary: devrocket-ecosystem
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+
+archives:
+  - id: default
+    format: tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: "checksums.txt"
+
+release:
+  github:
+    owner: IsaiasUziel
+    name: devrocket-ecosystem
+
+brews:
+  - name: devrocket-ecosystem
+    repository:
+      owner: IsaiasUziel
+      name: homebrew-devrocket-ecosystem
+    homepage: "https://github.com/IsaiasUziel/devrocket-ecosystem"
+    description: "An opinionated terminal dev environment — Ghostty + Tmux + Neovim + Zsh"
+    license: "MIT"
+    install: |
+      bin.install "devrocket-ecosystem"
+    test: |
+      system "#{bin}/devrocket-ecosystem", "--version"
