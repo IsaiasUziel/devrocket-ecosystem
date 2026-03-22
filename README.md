@@ -33,26 +33,34 @@
 
 ## 🏗️ Architecture
 
-```
-┌─────────────────────────────────────────┐
-│  Ghostty (Terminal Emulator)            │ ← Layer 1: OS input
-│  ┌─────────────────────────────────────┐│
-│  │  Tmux (Multiplexer) prefix: C-a    ││ ← Layer 2: Sessions, windows, panes
-│  │  ┌─────────────────────────────────┐││
-│  │  │  Zsh + Neovim/LazyVim          │││ ← Layer 3: Shell or Editor
-│  │  └─────────────────────────────────┘││
-│  └─────────────────────────────────────┘│
-└─────────────────────────────────────────┘
-```
+| Layer | Tool | Responsibility |
+|------|------|----------------|
+| **Layer 1** | Ghostty | Terminal emulator, OS input, visual rendering |
+| **Layer 2** | Tmux | Sessions, windows, panes, popup workflows |
+| **Layer 3** | Zsh + Neovim/LazyVim | Shell, editing, navigation, coding workflow |
 
-Each keystroke flows **DOWN** through layers. If Ghostty captures it, Tmux never sees it.
-Understanding this saves hours of debugging.
+Each keystroke flows **down** through these layers. If Ghostty captures it, Tmux never sees it. If Tmux captures it, Neovim never sees it. Understanding that interaction saves a lot of debugging time.
 
 ## 📋 Prerequisites
 
 This project is a **config overlay** — it assumes you already have the tools installed.
 
 ### Recommended: Install via [Gentleman.Dots](https://github.com/Gentleman-Programming/Gentleman.Dots)
+
+This project exists because **Gentleman.Dots** already solves the hard part: setting up a serious terminal environment with the right tools, dependencies, and base conventions.
+
+**DevRocket Ecosystem is intentionally an overlay on top of Gentleman.Dots**, not a replacement.
+
+What Gentleman.Dots gives you:
+- a polished bootstrap experience for the core toolchain
+- the foundational terminal/dev setup this project builds on
+- the conventions and ecosystem this repo extends with a more opinionated personal workflow
+
+What DevRocket Ecosystem adds on top:
+- the Go TUI installer experience
+- the integrated Ghostty + Tmux + LazyVim workflow
+- the popup cheatsheet system and daily keybinding ergonomics
+- the opinionated UX details and personal workflow layering
 
 ```bash
 brew tap Gentleman-Programming/homebrew-tap
@@ -120,6 +128,8 @@ The TUI installer will:
 3. Press `C-a + I` inside tmux to install TPM plugins
 4. Open `nvim` and wait for LazyVim to sync plugins
 5. Edit `~/.zshrc.local` for your private aliases (passwords, SSH, etc.)
+
+> If you already had a `~/.zshrc.local`, the installer now lets you keep it as-is or replace it explicitly. It will not overwrite it silently.
 
 ## 📁 What Gets Installed
 
