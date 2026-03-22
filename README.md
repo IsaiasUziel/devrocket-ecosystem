@@ -3,8 +3,23 @@
 > An opinionated, batteries-included terminal development environment.  
 > Ghostty + Tmux + Neovim (LazyVim) + Zsh — configured to work together seamlessly.
 
-<!-- TODO: Add screenshot here -->
-<!-- ![DevRocket Ecosystem](./assets/screenshot.png) -->
+![DevRocket Ecosystem Installer](./screenshots/step-1.png)
+
+## 👀 Preview
+
+### TUI Installer
+
+| Welcome | Component Selection |
+|--------|----------------------|
+| ![Welcome screen](./screenshots/step-1.png) | ![Component selection](./screenshots/step-2.png) |
+
+| Pre-flight Checks | Installation Result |
+|-------------------|---------------------|
+| ![Pre-flight checks](./screenshots/step-3.png) | ![Installation result](./screenshots/step-4.png) |
+
+### Cheatsheet Popup
+
+![Cheatsheet popup](./screenshots/cheatsheet-popup.png)
 
 ## ✨ What's Inside
 
@@ -89,6 +104,13 @@ The TUI installer will:
 3. ✅ Backup your existing configs to `~/.devrocket-backup/`
 4. ✅ Copy configs from the embedded binary to your config locations
 5. ✅ Create `~/.zshrc.local` for your private aliases
+
+## 🧭 Installation Flow
+
+1. **Launch the TUI** — choose `Install`, `Uninstall`, or `Quit`
+2. **Select components** — Ghostty, Tmux, Neovim, Zsh, Cheatsheet
+3. **Run pre-flight checks** — tool detection, OS info, Homebrew prefix, backup status
+4. **Install with feedback** — per-component progress and success/warn/error summary
 
 ### After installing:
 
