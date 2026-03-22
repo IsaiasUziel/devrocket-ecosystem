@@ -100,7 +100,10 @@ func (m Model) updateWelcome(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) updateSelector(msg tea.Msg) (tea.Model, tea.Cmd) {
-	maxIdx := len(m.components) // last valid index = backup toggle row
+	maxIdx := len(m.components)
+	if m.hasZshLocal && m.zshSelected() {
+		maxIdx = len(m.components) + 1
+	}
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -116,8 +119,10 @@ func (m Model) updateSelector(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case " ":
 			if m.selectorIdx < len(m.components) {
 				m.components[m.selectorIdx].Selected = !m.components[m.selectorIdx].Selected
-			} else {
+			} else if m.selectorIdx == len(m.components) {
 				m.backupEnabled = !m.backupEnabled
+			} else if m.hasZshLocal && m.zshSelected() && m.selectorIdx == len(m.components)+1 {
+				m.replaceZshLocal = !m.replaceZshLocal
 			}
 		case "a":
 			for i := range m.components {
@@ -138,6 +143,9 @@ func (m Model) updateSelector(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "esc", "q":
 			m.screen = ScreenWelcome
 		}
+	}
+	if m.selectorIdx > maxIdx {
+		m.selectorIdx = maxIdx
 	}
 	return m, nil
 }
@@ -178,8 +186,15 @@ func (m Model) updateInstalling(msg tea.Msg) (tea.Model, tea.Cmd) {
 		_ = installer.WriteManifest(manifest)
 
 		// Create .zshrc.local if needed.
-		if EmbedFS != nil {
-			_ = installer.CreateZshrcLocal(EmbedFS)
+		if EmbedFS != nil && m.zshSelected() {
+			if note, err := installer.CreateZshrcLocal(EmbedFS, m.replaceZshLocal, m.backupEnabled); err == nil && note != "" {
+				for i := range m.results {
+					if m.results[i].Component == "Zsh" {
+						m.results[i].Notes = append(m.results[i].Notes, note)
+						break
+					}
+				}
+			}
 		}
 
 		m.screen = ScreenResult

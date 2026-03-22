@@ -2,6 +2,9 @@
 package tui
 
 import (
+	"os"
+	"path/filepath"
+
 	"github.com/IsaiasUziel/devrocket-ecosystem/internal/config"
 	"github.com/IsaiasUziel/devrocket-ecosystem/internal/installer"
 	tea "github.com/charmbracelet/bubbletea"
@@ -47,9 +50,11 @@ type Model struct {
 	welcomeCursor int // 0=Install, 1=Uninstall, 2=Quit
 
 	// Selector screen
-	components    []ComponentItem
-	selectorIdx   int
-	backupEnabled bool
+	components      []ComponentItem
+	selectorIdx     int
+	backupEnabled   bool
+	hasZshLocal     bool
+	replaceZshLocal bool
 
 	// Preflight
 	systemInfo    installer.SystemInfo
@@ -78,15 +83,29 @@ func NewModel(version string) Model {
 		}
 	}
 
+	zshLocalPath := filepath.Join(config.HomeDir(), ".zshrc.local")
+	_, err := os.Stat(zshLocalPath)
+	hasZshLocal := err == nil
+
 	return Model{
 		screen:        ScreenWelcome,
 		version:       version,
 		components:    items,
 		backupEnabled: true,
+		hasZshLocal:   hasZshLocal,
 	}
 }
 
 // Init implements tea.Model.
 func (m Model) Init() tea.Cmd {
 	return nil
+}
+
+func (m Model) zshSelected() bool {
+	for _, item := range m.components {
+		if item.Component.Name == "Zsh" {
+			return item.Selected
+		}
+	}
+	return false
 }

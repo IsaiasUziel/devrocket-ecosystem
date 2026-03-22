@@ -86,7 +86,7 @@ brew install devrocket-ecosystem
 ### Run the installer
 
 ```bash
-devrocket-ecosystem
+dr-sys
 ```
 
 ### From Source
@@ -95,7 +95,7 @@ devrocket-ecosystem
 git clone https://github.com/IsaiasUziel/devrocket-ecosystem.git
 cd devrocket-ecosystem
 make build
-./bin/devrocket-ecosystem
+./bin/dr-sys
 ```
 
 The TUI installer will:
@@ -104,6 +104,7 @@ The TUI installer will:
 3. ✅ Backup your existing configs to `~/.devrocket-backup/`
 4. ✅ Copy configs from the embedded binary to your config locations
 5. ✅ Create `~/.zshrc.local` for your private aliases
+6. ✅ Ask before replacing an existing `~/.zshrc.local`
 
 ## 🧭 Installation Flow
 
@@ -213,7 +214,7 @@ export OPENAI_API_KEY="sk-..."
 
 ## 🗑️ Uninstall
 
-Run `devrocket-ecosystem` and select **Uninstall** from the main menu.
+Run `dr-sys` and select **Uninstall** from the main menu.
 
 This will:
 - Remove all configs managed by the installer

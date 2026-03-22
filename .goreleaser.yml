@@ -7,7 +7,7 @@ before:
 builds:
   - id: devrocket-ecosystem
     main: ./cmd/devrocket
-    binary: devrocket-ecosystem
+    binary: dr-sys
     env:
       - CGO_ENABLED=0
     goos:
@@ -40,12 +40,12 @@ homebrew_casks:
     description: "An opinionated terminal dev environment - Ghostty + Tmux + Neovim + Zsh"
     license: "MIT"
     binaries:
-      - devrocket-ecosystem
+      - dr-sys
     url:
       verified: github.com/IsaiasUziel/devrocket-ecosystem/
     hooks:
       post:
         install: |
           if OS.mac?
-            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/devrocket-ecosystem"]
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/dr-sys"]
           end

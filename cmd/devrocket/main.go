@@ -15,7 +15,7 @@ func main() {
 	if len(os.Args) > 1 {
 		switch os.Args[1] {
 		case "--version", "-v":
-			fmt.Printf("devrocket-ecosystem %s\n", version)
+			fmt.Printf("dr-sys %s\n", version)
 			os.Exit(0)
 		case "--help", "-h":
 			printHelp()
@@ -37,9 +37,9 @@ func printHelp() {
 	fmt.Println(`DevRocket Ecosystem — Terminal Development Environment
 
 Usage:
-  devrocket-ecosystem            Launch interactive TUI installer
-  devrocket-ecosystem --version  Show version
-  devrocket-ecosystem --help     Show this help
+  dr-sys            Launch interactive TUI installer
+  dr-sys --version  Show version
+  dr-sys --help     Show this help
 
 For more info: https://github.com/IsaiasUziel/devrocket-ecosystem`)
 }

@@ -107,6 +107,22 @@ func (m Model) viewSelector() string {
 	}
 	b.WriteString(fmt.Sprintf("  %s %s %s\n", backupCursor, backupCheck, backupLabel))
 
+	if m.hasZshLocal && m.zshSelected() {
+		localCursor := "  "
+		if m.selectorIdx == len(m.components)+1 {
+			localCursor = accentStyle.Render("▸ ")
+		}
+		localCheck := checkboxOffStyle.Render("[ ]")
+		if m.replaceZshLocal {
+			localCheck = checkboxOnStyle.Render("[✓]")
+		}
+		localLabel := "Replace existing ~/.zshrc.local"
+		if m.selectorIdx == len(m.components)+1 {
+			localLabel = selectedStyle.Render(localLabel)
+		}
+		b.WriteString(fmt.Sprintf("  %s %s %s  %s\n", localCursor, localCheck, localLabel, dimStyle.Render("off keeps your aliases intact")))
+	}
+
 	b.WriteString("\n\n")
 	b.WriteString(dimStyle.Render("  ↑↓ / j k navigate • Space toggle • a all • n none • Enter proceed • Esc back"))
 	b.WriteString("\n")
@@ -153,6 +169,13 @@ func (m Model) viewPreflight() string {
 
 	if m.backupEnabled {
 		b.WriteString(fmt.Sprintf("\n  Backup: %s\n", successStyle.Render("✓ enabled")))
+	}
+	if m.hasZshLocal && m.zshSelected() {
+		status := warnStyle.Render("preserve existing ~/.zshrc.local")
+		if m.replaceZshLocal {
+			status = warnStyle.Render("replace existing ~/.zshrc.local")
+		}
+		b.WriteString(fmt.Sprintf("  Zsh local: %s\n", status))
 	}
 
 	b.WriteString("\n\n")

@@ -69,14 +69,28 @@ func InstallComponent(comp config.Component, embedFS fs.FS, backup bool) Install
 	return result
 }
 
-// CreateZshrcLocal creates ~/.zshrc.local from the bundled template only when
-// the file does not already exist, preserving any customisations the user has.
-func CreateZshrcLocal(embedFS fs.FS) error {
+// CreateZshrcLocal manages ~/.zshrc.local using the bundled template.
+// When replace is false, an existing file is preserved.
+// When replace is true, the existing file is optionally backed up and replaced.
+func CreateZshrcLocal(embedFS fs.FS, replace bool, backup bool) (string, error) {
 	localPath := filepath.Join(config.HomeDir(), ".zshrc.local")
 	if _, err := os.Stat(localPath); err == nil {
-		return nil // already exists — preserve it
+		if !replace {
+			return "kept existing ~/.zshrc.local", nil
+		}
+		if backup {
+			if _, err := CreateBackup(localPath); err != nil {
+				return "", fmt.Errorf("failed to backup ~/.zshrc.local: %w", err)
+			}
+		}
 	}
-	return extractFile(embedFS, "configs/zsh/zshrc.local.example", localPath)
+	if err := extractFile(embedFS, "configs/zsh/zshrc.local.example", localPath); err != nil {
+		return "", err
+	}
+	if replace {
+		return "replaced ~/.zshrc.local from template", nil
+	}
+	return "created ~/.zshrc.local from template", nil
 }
 
 // BuildManifest constructs a manifest from a completed set of install results.

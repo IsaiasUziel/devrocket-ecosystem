@@ -1,6 +1,6 @@
 .PHONY: build run test clean install
 
-BINARY_NAME=devrocket-ecosystem
+BINARY_NAME=dr-sys
 VERSION=$(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 
 build:
