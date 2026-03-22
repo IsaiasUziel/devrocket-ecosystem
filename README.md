@@ -43,7 +43,9 @@ Each keystroke flows **down** through these layers. If Ghostty captures it, Tmux
 
 ## 📋 Prerequisites
 
-This project is a **config overlay** — it assumes you already have the tools installed.
+This project is a **config overlay** - it assumes you already have the tools installed.
+
+Initial Linux support is included for the installer, tmux clipboard integration, shell config, and the release installer path below. macOS remains the primary target, but Linux should now work with minimal extra setup.
 
 ### Recommended: Install via [Gentleman.Dots](https://github.com/Gentleman-Programming/Gentleman.Dots)
 
@@ -70,21 +72,45 @@ gentleman-dots
 
 ### Required Tools
 
-| Tool | Install |
-|------|---------|
-| [Ghostty](https://ghostty.org) | Download from website |
-| [Tmux](https://github.com/tmux/tmux) | `brew install tmux` |
-| [Neovim](https://neovim.io) | `brew install neovim` |
-| [fzf](https://github.com/junegunn/fzf) | `brew install fzf` |
-| [Zsh](https://www.zsh.org) | Usually pre-installed on macOS |
-| [fd](https://github.com/sharkdp/fd) | `brew install fd` |
-| [bat](https://github.com/sharkdp/bat) | `brew install bat` |
-| [zoxide](https://github.com/ajeetdsouza/zoxide) | `brew install zoxide` |
-| [Atuin](https://atuin.sh) | `brew install atuin` |
+| Tool | macOS / Homebrew | Linux |
+|------|------------------|-------|
+| [Ghostty](https://ghostty.org) | Download from website | Download from website or install with your distro package manager |
+| [Tmux](https://github.com/tmux/tmux) | `brew install tmux` | Install with your distro package manager |
+| [Neovim](https://neovim.io) | `brew install neovim` | Install with your distro package manager |
+| [fzf](https://github.com/junegunn/fzf) | `brew install fzf` | Install with your distro package manager |
+| [Zsh](https://www.zsh.org) | Usually pre-installed on macOS | Usually available via your distro package manager |
+| [fd](https://github.com/sharkdp/fd) | `brew install fd` | Install with your distro package manager |
+| [bat](https://github.com/sharkdp/bat) | `brew install bat` | Install with your distro package manager |
+| [zoxide](https://github.com/ajeetdsouza/zoxide) | `brew install zoxide` | Install with your distro package manager |
+| [Atuin](https://atuin.sh) | `brew install atuin` | Install with your distro package manager |
+
+### Linux notes
+
+- Recommended Linux flow: use [Gentleman.Dots](https://github.com/Gentleman-Programming/Gentleman.Dots) as the base environment first, then run `dr-sys` to apply this repo as an overlay on top.
+- If you do not want to use Gentleman.Dots, install the required tools manually first, then run `dr-sys` to apply this repo's config overlay.
+- Install the required tools with your distro package manager or Linuxbrew/Homebrew before running the installer.
+- Install a clipboard helper for tmux copy-mode: `wl-clipboard` on Wayland, or `xclip` / `xsel` on X11.
+- Make sure `~/.local/bin` is on your `PATH` if you want the installer to place `tmux-cheatsheet` there on Linux.
+- Linuxbrew/Homebrew is optional; if it is installed and detected, the installer will reuse its `bin` directory.
+- The official Linux `install.sh` below installs only the `dr-sys` release binary. It does not install Ghostty, tmux, Neovim, or other system dependencies for you.
 
 ## 🚀 Installation
 
-### Via Homebrew (recommended)
+### Linux: official install.sh
+
+Recommended on Linux after your base tools are already in place. This downloads the matching `dr-sys` release archive from GitHub Releases and installs only the `dr-sys` binary into `~/.local/bin` by default. It does not install system dependencies for you.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/IsaiasUziel/devrocket-ecosystem/master/install.sh | sh
+```
+
+Optional overrides:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/IsaiasUziel/devrocket-ecosystem/master/install.sh | VERSION=v0.1.0 INSTALL_DIR="$HOME/bin" sh
+```
+
+### Homebrew (recommended on macOS)
 
 ```bash
 brew tap IsaiasUziel/devrocket-ecosystem
@@ -107,7 +133,7 @@ make build
 ```
 
 The TUI installer will:
-1. ✅ Detect your OS and Homebrew prefix
+1. ✅ Detect your OS and install prefix
 2. ✅ Check for installed tools (skips configs for missing tools)
 3. ✅ Backup your existing configs to `~/.devrocket-backup/`
 4. ✅ Copy configs from the embedded binary to your config locations
@@ -118,7 +144,7 @@ The TUI installer will:
 
 1. **Launch the TUI** — choose `Install`, `Uninstall`, or `Quit`
 2. **Select components** — Ghostty, Tmux, Neovim, Zsh, Cheatsheet
-3. **Run pre-flight checks** — tool detection, OS info, Homebrew prefix, backup status
+3. **Run pre-flight checks** - tool detection, OS info, install prefix, backup status
 4. **Install with feedback** — per-component progress and success/warn/error summary
 
 ### After installing:
@@ -141,7 +167,7 @@ The TUI installer copies configs from the embedded binary (no internet required 
 | **Tmux** | `~/.tmux.conf` |
 | **Neovim** | `~/.config/nvim/` |
 | **Zsh** | `~/.zshrc`, `~/.p10k.zsh` |
-| **Cheatsheet** | `$BREW_PREFIX/bin/tmux-cheatsheet` |
+| **Cheatsheet** | `$BIN_DIR/tmux-cheatsheet` (`~/.local/bin` on Linux by default) |
 
 Each component can be individually selected or deselected in the TUI before installing.
 

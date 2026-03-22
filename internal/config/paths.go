@@ -8,6 +8,11 @@ import (
 	"strings"
 )
 
+var darwinBrewPrefixes = []string{
+	"/opt/homebrew",
+	"/usr/local",
+}
+
 // HomeDir returns the user's home directory.
 func HomeDir() string {
 	home, _ := os.UserHomeDir()
@@ -19,23 +24,66 @@ func ConfigDir() string {
 	return filepath.Join(HomeDir(), ".config")
 }
 
-// BrewPrefix detects the Homebrew prefix for the current system.
-// Order of detection: `brew --prefix`, known macOS paths, Linux ~/.linuxbrew.
-func BrewPrefix() string {
+func existingDir(path string) bool {
+	info, err := os.Stat(path)
+	return err == nil && info.IsDir()
+}
+
+func detectBrewPrefix() string {
 	if out, err := exec.Command("brew", "--prefix").Output(); err == nil {
-		return strings.TrimSpace(string(out))
-	}
-	if runtime.GOOS == "darwin" {
-		if _, err := os.Stat("/opt/homebrew"); err == nil {
-			return "/opt/homebrew"
+		prefix := strings.TrimSpace(string(out))
+		if prefix != "" && existingDir(prefix) {
+			return prefix
 		}
-		return "/usr/local"
 	}
+
 	home := HomeDir()
-	if _, err := os.Stat(filepath.Join(home, ".linuxbrew")); err == nil {
-		return filepath.Join(home, ".linuxbrew")
+	candidates := []string{}
+	if runtime.GOOS == "darwin" {
+		candidates = append(candidates, darwinBrewPrefixes...)
 	}
-	return "/usr/local"
+	candidates = append(candidates,
+		filepath.Join(home, ".linuxbrew"),
+		"/home/linuxbrew/.linuxbrew",
+	)
+
+	for _, prefix := range candidates {
+		if existingDir(prefix) && existingDir(filepath.Join(prefix, "bin")) {
+			return prefix
+		}
+	}
+
+	return ""
+}
+
+// BrewPrefix detects the preferred install prefix for the current system.
+// Order of detection: `brew --prefix`, known Homebrew/Linuxbrew paths, Linux ~/.local fallback.
+func BrewPrefix() string {
+	if prefix := detectBrewPrefix(); prefix != "" {
+		return prefix
+	}
+
+	if runtime.GOOS == "linux" {
+		return filepath.Join(HomeDir(), ".local")
+	}
+
+	return filepath.Join("/usr/local")
+}
+
+// BinDir returns the preferred user-facing bin directory for installed helpers.
+func BinDir() string {
+	if prefix := detectBrewPrefix(); prefix != "" {
+		binDir := filepath.Join(prefix, "bin")
+		if existingDir(binDir) {
+			return binDir
+		}
+	}
+
+	if runtime.GOOS == "linux" {
+		return filepath.Join(HomeDir(), ".local", "bin")
+	}
+
+	return filepath.Join("/usr/local", "bin")
 }
 
 // BackupDir returns the base backup directory path (~/.devrocket-backup).

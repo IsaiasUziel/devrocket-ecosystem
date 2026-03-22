@@ -4,16 +4,42 @@
 
 local M = {}
 
+local function is_homebrew_path(path)
+  return path:match("/homebrew/") or path:match("/linuxbrew/")
+end
+
+local function manager_hint(node_path)
+  if node_path:match("%.volta/") then
+    return "Try upgrading with Volta (for example: volta install node@latest)."
+  elseif node_path:match("%.nvm/") then
+    return "Try upgrading with NVM (for example: nvm install --lts && nvm alias default lts/*)."
+  elseif node_path:match("%.nix%-profile/") then
+    return "Try upgrading with Nix (for example: nix profile upgrade nixpkgs#nodejs)."
+  elseif is_homebrew_path(node_path) then
+    return "Try upgrading with Homebrew (for example: brew upgrade node)."
+  end
+
+  return "Upgrade Node.js with your system package manager, version manager, or Homebrew if that is how you installed it."
+end
+
 -- Function to get system Node.js path (avoiding project-specific versions)
 local function get_system_node()
+  local path_node = vim.fn.exepath("node")
+  if path_node ~= "" then
+    return path_node
+  end
+
   -- Priority order for system Node.js (avoiding project overrides)
   local system_paths = {
-    "/opt/homebrew/bin/node", -- Homebrew on Apple Silicon
-    "/usr/local/bin/node", -- Homebrew on Intel Mac or standard install
     vim.fn.expand("~/.volta/bin/node"), -- Volta's global Node
-    vim.fn.expand("~/.nvm/versions/node/*/bin/node"), -- NVM default version
     vim.fn.expand("~/.nix-profile/bin/node"), -- Nix
+    vim.fn.expand("~/.local/bin/node"), -- User-local installs
+    "/opt/homebrew/bin/node", -- Homebrew on Apple Silicon
+    "/home/linuxbrew/.linuxbrew/bin/node", -- Homebrew on Linux
+    "/usr/local/bin/node", -- Common user-managed install prefix
+    "/opt/local/bin/node", -- MacPorts or custom prefix
     "/usr/bin/node", -- System default
+    vim.fn.expand("~/.nvm/versions/node/*/bin/node"), -- NVM fallback
   }
 
   -- First try to find a system Node.js directly
@@ -39,8 +65,7 @@ local function get_system_node()
     ::continue::
   end
 
-  -- Fallback to whatever is in PATH (but warn if it might be project-specific)
-  return vim.fn.exepath("node")
+  return ""
 end
 
 -- Function to setup Node.js for Neovim
@@ -82,7 +107,7 @@ local function setup_nodejs()
               print("  Using NVM-managed Node.js")
             elseif node_path:match("%.nix%-profile/") then
               print("  Using Nix-managed Node.js")
-            elseif node_path:match("/homebrew/") then
+            elseif is_homebrew_path(node_path) then
               print("  Using Homebrew-managed Node.js")
             else
               print("  Using system Node.js")
@@ -91,24 +116,14 @@ local function setup_nodejs()
 
           return true, version
         else
-          -- Provide specific upgrade instructions based on the detected manager
           local upgrade_msg = "⚠️  Node.js version "
             .. version
             .. " is too old. Neovim requires v18+ (v22+ recommended).\n\n"
 
-          if node_path:match("/homebrew/") then
-            upgrade_msg = upgrade_msg .. "To upgrade with Homebrew:\n  brew upgrade node"
-          elseif node_path:match("%.volta/") then
-            upgrade_msg = upgrade_msg .. "To upgrade with Volta:\n  volta install node@latest"
-          elseif node_path:match("%.nvm/") then
-            upgrade_msg = upgrade_msg .. "To upgrade with NVM:\n  nvm install --lts\n  nvm alias default lts/*"
-          elseif node_path:match("%.nix%-profile/") then
-            upgrade_msg = upgrade_msg .. "To upgrade with Nix:\n  nix profile upgrade nixpkgs#nodejs"
-          else
-            upgrade_msg = upgrade_msg .. "Please upgrade Node.js to v18 or higher using your package manager."
-          end
-
-          upgrade_msg = upgrade_msg .. "\n\nNote: Neovim uses the SYSTEM Node.js, not project-specific versions."
+          upgrade_msg = upgrade_msg
+            .. "Upgrade guidance: "
+            .. manager_hint(node_path)
+            .. "\n\nNote: Neovim uses the Node.js found in your PATH or a user-level install, not a project-local binary."
 
           vim.notify(upgrade_msg, vim.log.levels.WARN)
           vim.g.node_host_prog = node_path
@@ -128,7 +143,7 @@ local function setup_nodejs()
   end
 
   vim.notify(
-    "⚠️  Node.js not found! Some plugins may not work correctly.\nInstall Node.js with:\n  brew install node",
+    "⚠️  Node.js not found! Some plugins may not work correctly.\nInstall Node.js with your system package manager (apt, dnf, pacman, etc.), Homebrew, Volta, or NVM, then restart Neovim.",
     vim.log.levels.ERROR
   )
   return false, nil
@@ -202,7 +217,7 @@ function M.info()
     print("Source: NVM-managed")
   elseif vim.g.node_host_prog:match("%.nix%-profile/") then
     print("Source: Nix-managed")
-  elseif vim.g.node_host_prog:match("/homebrew/") then
+  elseif is_homebrew_path(vim.g.node_host_prog) then
     print("Source: Homebrew-managed")
   else
     print("Source: System")

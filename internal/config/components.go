@@ -24,7 +24,7 @@ type Target struct {
 func AllComponents() []Component {
 	home := HomeDir()
 	configDir := ConfigDir()
-	brewPrefix := BrewPrefix()
+	binDir := BinDir()
 
 	return []Component{
 		{
@@ -72,7 +72,7 @@ func AllComponents() []Component {
 			Description: "Filterable popup with Alt+c (tmux plugin)",
 			EmbedDir:    "configs/cheatsheet",
 			Targets: []Target{
-				{Source: "tmux-cheatsheet", Dest: filepath.Join(brewPrefix, "bin", "tmux-cheatsheet")},
+				{Source: "tmux-cheatsheet", Dest: filepath.Join(binDir, "tmux-cheatsheet")},
 			},
 		},
 	}
