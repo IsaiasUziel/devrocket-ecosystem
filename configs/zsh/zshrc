@@ -27,15 +27,23 @@ fi
 export EDITOR="nvim"
 export VISUAL="nvim"
 
+source_if_exists() {
+    [[ -f "$1" ]] && source "$1"
+}
+
 if [[ $- == *i* ]]; then
     # Commands to run in interactive sessions can go here
 fi
 
 export LS_COLORS="di=38;5;67:ow=48;5;60:ex=38;5;132:ln=38;5;144:*.tar=38;5;180:*.zip=38;5;180:*.jpg=38;5;175:*.png=38;5;175:*.mp3=38;5;175:*.wav=38;5;175:*.txt=38;5;223:*.sh=38;5;132"
 if [[ "$(uname)" == "Darwin" ]]; then
-  alias ls='ls --color=auto'
+  if command -v gls >/dev/null 2>&1; then
+    alias ls='gls --color=auto'
+  else
+    alias ls='ls -G'
+  fi
 else
-  alias ls='gls --color=auto'
+  alias ls='ls --color=auto'
 fi
 
 # FZF aliases
@@ -48,32 +56,32 @@ alias tmux-ls='tmux ls | grep sdg'
 # Personal aliases go in ~/.zshrc.local (see zshrc.local.example)
 
 # Homebrew setup (skip on Termux)
+BREW_BIN=""
+BREW_PREFIX=""
 if [[ $IS_TERMUX -eq 0 ]]; then
-    if [[ "$(uname)" == "Darwin" ]]; then
-        # macOS - check for Apple Silicon vs Intel
-        if [[ -f "/opt/homebrew/bin/brew" ]]; then
-            # Apple Silicon (M1/M2/M3)
-            BREW_BIN="/opt/homebrew/bin"
-        elif [[ -f "/usr/local/bin/brew" ]]; then
-            # Intel Mac
-            BREW_BIN="/usr/local/bin"
+    for candidate in \
+        "/opt/homebrew/bin" \
+        "/usr/local/bin" \
+        "$HOME/.linuxbrew/bin" \
+        "/home/linuxbrew/.linuxbrew/bin"; do
+        if [[ -x "$candidate/brew" ]]; then
+            BREW_BIN="$candidate"
+            BREW_PREFIX="${candidate%/bin}"
+            break
         fi
-    else
-        # Linux
-        BREW_BIN="/home/linuxbrew/.linuxbrew/bin"
-    fi
+    done
 
-    # Only eval brew shellenv if brew is installed
-    if [[ -n "$BREW_BIN" && -f "$BREW_BIN/brew" ]]; then
+    if [[ -n "$BREW_BIN" ]]; then
         eval "$($BREW_BIN/brew shellenv)"
+        BREW_PREFIX="${HOMEBREW_PREFIX:-$BREW_PREFIX}"
     fi
 fi
 
 # Powerlevel10k theme only (must load before oh-my-zsh)
 if [[ $IS_TERMUX -eq 1 ]]; then
-    [[ -f "$PREFIX/share/powerlevel10k/powerlevel10k.zsh-theme" ]] && source "$PREFIX/share/powerlevel10k/powerlevel10k.zsh-theme"
+    source_if_exists "$PREFIX/share/powerlevel10k/powerlevel10k.zsh-theme"
 else
-    source $(dirname $BREW_BIN)/share/powerlevel10k/powerlevel10k.zsh-theme
+    source_if_exists "$BREW_PREFIX/share/powerlevel10k/powerlevel10k.zsh-theme"
 fi
 
 export FZF_DEFAULT_COMMAND="fd --hidden --strip-cwd-prefix --exclude .git"
@@ -102,11 +110,11 @@ plugins=(
 source $ZSH/oh-my-zsh.sh
 
 # ── Zsh plugins (MUST load AFTER oh-my-zsh/compinit) ──────────────────────────
-# zsh-autocomplete: MUST be first after compinit — it hooks into the completion system
+# zsh-autocomplete: MUST be first after compinit - it hooks into the completion system
 if [[ $IS_TERMUX -eq 1 ]]; then
-    [[ -f "$PREFIX/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh" ]] && source "$PREFIX/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh"
+    source_if_exists "$PREFIX/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh"
 else
-    source $(dirname $BREW_BIN)/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh
+    source_if_exists "$BREW_PREFIX/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh"
 fi
 
 # carapace: load AFTER autocomplete; prevent it from overriding Tab
@@ -127,16 +135,16 @@ eval "$(atuin init zsh)"
 
 # zsh-autosuggestions: after autocomplete (autocomplete manages its precmd order)
 if [[ $IS_TERMUX -eq 1 ]]; then
-    [[ -f "$PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh" ]] && source "$PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
+    source_if_exists "$PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
 else
-    source $(dirname $BREW_BIN)/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+    source_if_exists "$BREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
 fi
 
-# zsh-syntax-highlighting: MUST be LAST — always
+# zsh-syntax-highlighting: MUST be LAST - always
 if [[ $IS_TERMUX -eq 1 ]]; then
-    [[ -f "$PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]] && source "$PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+    source_if_exists "$PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 else
-    source $(dirname $BREW_BIN)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+    source_if_exists "$BREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 fi
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.

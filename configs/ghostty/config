@@ -42,8 +42,11 @@ custom-shader = shaders/cursor_smear_gentleman.glsl
 # │                            INPUT / KEYBINDINGS                               │
 # └──────────────────────────────────────────────────────────────────────────────┘
 
-# macOS Alt (Option) key: LEFT Option → sends ESC prefix (\e) so tmux/nvim get Alt sequences
-# RIGHT Option → stays as macOS special chars (á, é, ü, etc.)
+# macOS only: LEFT Option sends ESC prefix (\e) so tmux/nvim get Alt sequences.
+# RIGHT Option stays available for macOS special characters.
+# Linux note: Alt passthrough usually works without this option, and Super/global
+# shortcuts vary by desktop environment, so Linux-specific overrides are safer in
+# a local Ghostty config than forcing a cross-desktop default here.
 macos-option-as-alt = left
 
 # Unbind macOS default Option+arrow behavior so Alt+arrows pass through as escape sequences
@@ -81,6 +84,9 @@ keybind = alt+s=write_screen_file:paste
 keybind = global:cmd+`=toggle_visibility
 # Toggle quick terminal (quake-style dropdown)
 keybind = global:cmd+ctrl+`=toggle_quick_terminal
+# Linux note: these global cmd bindings intentionally stay macOS-oriented.
+# Many Linux window managers reserve Super/global shortcuts differently, so this
+# file documents the gap instead of guessing a risky cross-desktop binding.
 
 
 # ┌──────────────────────────────────────────────────────────────────────────────┐

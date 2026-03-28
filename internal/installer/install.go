@@ -65,6 +65,12 @@ func InstallComponent(comp config.Component, embedFS fs.FS, backup bool) Install
 		}
 	}
 
+	if comp.Name == "Neovim" {
+		if notes := bootstrapNeovimTools(filepath.Join(config.ConfigDir(), "nvim")); len(notes) > 0 {
+			result.Notes = append(result.Notes, notes...)
+		}
+	}
+
 	result.Success = true
 	return result
 }
@@ -177,4 +183,76 @@ func reloadTmuxConfig(configPath string) error {
 	}
 
 	return nil
+}
+
+func bootstrapNeovimTools(nvimConfigDir string) []string {
+	toolsDir := filepath.Join(nvimConfigDir, ".tools")
+	entries, err := os.ReadDir(toolsDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return []string{fmt.Sprintf("neovim local tools bootstrap skipped: %v", err)}
+	}
+
+	var notes []string
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+
+		toolDir := filepath.Join(toolsDir, entry.Name())
+		packageJSON := filepath.Join(toolDir, "package.json")
+		if _, err := os.Stat(packageJSON); err != nil {
+			continue
+		}
+
+		toolNotes, err := installNodeDependencies(toolDir)
+		if err != nil {
+			notes = append(notes, fmt.Sprintf("%s tool bootstrap failed: %v", entry.Name(), err))
+			continue
+		}
+
+		notes = append(notes, toolNotes...)
+	}
+
+	return notes
+}
+
+func installNodeDependencies(dir string) ([]string, error) {
+	if npm, err := exec.LookPath("npm"); err == nil {
+		args := []string{"install"}
+		lockfile := filepath.Join(dir, "package-lock.json")
+		if _, err := os.Stat(lockfile); err == nil {
+			args = []string{"ci"}
+		}
+
+		cmd := exec.Command(npm, args...)
+		cmd.Dir = dir
+		if out, err := cmd.CombinedOutput(); err != nil {
+			msg := strings.TrimSpace(string(out))
+			if msg == "" {
+				msg = err.Error()
+			}
+			return nil, fmt.Errorf("npm %s in %s: %s", strings.Join(args, " "), dir, msg)
+		}
+
+		return []string{fmt.Sprintf("bootstrapped Neovim local tool deps in %s via npm %s", dir, strings.Join(args, " "))}, nil
+	}
+
+	if bun, err := exec.LookPath("bun"); err == nil {
+		cmd := exec.Command(bun, "install")
+		cmd.Dir = dir
+		if out, err := cmd.CombinedOutput(); err != nil {
+			msg := strings.TrimSpace(string(out))
+			if msg == "" {
+				msg = err.Error()
+			}
+			return nil, fmt.Errorf("bun install in %s: %s", dir, msg)
+		}
+
+		return []string{fmt.Sprintf("bootstrapped Neovim local tool deps in %s via bun install", dir)}, nil
+	}
+
+	return []string{fmt.Sprintf("skipped Neovim local tool bootstrap in %s: npm/bun not found", dir)}, nil
 }

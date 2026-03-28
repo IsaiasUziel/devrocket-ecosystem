@@ -138,7 +138,11 @@ func (m Model) viewPreflight() string {
 
 	// System info
 	b.WriteString(fmt.Sprintf("  System: %s\n", accentStyle.Render(installer.FormatOS(m.systemInfo))))
-	b.WriteString(fmt.Sprintf("  Homebrew: %s\n", accentStyle.Render(m.systemInfo.BrewPrefix)))
+	prefix := m.systemInfo.BrewPrefix
+	if prefix == "" {
+		prefix = "not detected"
+	}
+	b.WriteString(fmt.Sprintf("  Install prefix: %s\n", accentStyle.Render(prefix)))
 
 	if m.gentlemanDots {
 		b.WriteString(fmt.Sprintf("  Gentleman.Dots: %s\n", successStyle.Render("✓ detected")))
