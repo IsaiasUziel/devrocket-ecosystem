@@ -15,8 +15,6 @@ return {
     workspaces = {
       {
         name = "GentlemanNotes", -- Name of the workspace
-        -- Configurable: change the path below to point to your Obsidian vault.
-        -- Uses $HOME so it works across different machines and users.
         path = os.getenv("HOME") .. "/.config/obsidian", -- Path to the notes directory
       },
     },

@@ -9,12 +9,12 @@
 
 ### TUI Installer
 
-| Welcome | Component Selection |
-|--------|----------------------|
+| Welcome                                     | Component Selection                              |
+| ------------------------------------------- | ------------------------------------------------ |
 | ![Welcome screen](./screenshots/step-1.png) | ![Component selection](./screenshots/step-2.png) |
 
-| Pre-flight Checks | Installation Result |
-|-------------------|---------------------|
+| Pre-flight Checks                              | Installation Result                              |
+| ---------------------------------------------- | ------------------------------------------------ |
 | ![Pre-flight checks](./screenshots/step-3.png) | ![Installation result](./screenshots/step-4.png) |
 
 ### Cheatsheet Popup
@@ -23,21 +23,21 @@
 
 ## ✨ What's Inside
 
-| Tool | Config | Highlights |
-|------|--------|------------|
-| **Ghostty** | Terminal emulator | Kanagawa theme, custom shaders, optimized keybindings |
-| **Tmux** | Terminal multiplexer | Prefix `C-a`, seamless navigation with Neovim, popup cheatsheet |
-| **Neovim** | Editor (LazyVim) | 29+ plugins, Harpoon2, Oil.nvim, Flash.nvim, LSP |
-| **Zsh** | Shell | Powerlevel10k, autocomplete, syntax highlighting, Atuin, zoxide |
-| **Cheatsheet** | Tmux popup | Filterable keybinding reference with category cycling (Alt+c) |
+| Tool           | Config               | Highlights                                                      |
+| -------------- | -------------------- | --------------------------------------------------------------- |
+| **Ghostty**    | Terminal emulator    | Kanagawa theme, custom shaders, optimized keybindings           |
+| **Tmux**       | Terminal multiplexer | Prefix `C-a`, seamless navigation with Neovim, popup cheatsheet |
+| **Neovim**     | Editor (LazyVim)     | 29+ plugins, Harpoon2, Oil.nvim, Flash.nvim, LSP                |
+| **Zsh**        | Shell                | Powerlevel10k, autocomplete, syntax highlighting, Atuin, zoxide |
+| **Cheatsheet** | Tmux popup           | Filterable keybinding reference with category cycling (Alt+c)   |
 
 ## 🏗️ Architecture
 
-| Layer | Tool | Responsibility |
-|------|------|----------------|
-| **Layer 1** | Ghostty | Terminal emulator, OS input, visual rendering |
-| **Layer 2** | Tmux | Sessions, windows, panes, popup workflows |
-| **Layer 3** | Zsh + Neovim/LazyVim | Shell, editing, navigation, coding workflow |
+| Layer       | Tool                 | Responsibility                                |
+| ----------- | -------------------- | --------------------------------------------- |
+| **Layer 1** | Ghostty              | Terminal emulator, OS input, visual rendering |
+| **Layer 2** | Tmux                 | Sessions, windows, panes, popup workflows     |
+| **Layer 3** | Zsh + Neovim/LazyVim | Shell, editing, navigation, coding workflow   |
 
 Each keystroke flows **down** through these layers. If Ghostty captures it, Tmux never sees it. If Tmux captures it, Neovim never sees it. Understanding that interaction saves a lot of debugging time.
 
@@ -54,11 +54,13 @@ This project exists because **Gentleman.Dots** already solves the hard part: set
 **DevRocket Ecosystem is intentionally an overlay on top of Gentleman.Dots**, not a replacement.
 
 What Gentleman.Dots gives you:
+
 - a polished bootstrap experience for the core toolchain
 - the foundational terminal/dev setup this project builds on
 - the conventions and ecosystem this repo extends with a more opinionated personal workflow
 
 What DevRocket Ecosystem adds on top:
+
 - the Go TUI installer experience
 - the integrated Ghostty + Tmux + LazyVim workflow
 - the popup cheatsheet system and daily keybinding ergonomics
@@ -72,17 +74,17 @@ gentleman-dots
 
 ### Required Tools
 
-| Tool | macOS / Homebrew | Linux |
-|------|------------------|-------|
-| [Ghostty](https://ghostty.org) | Download from website | Download from website or install with your distro package manager |
-| [Tmux](https://github.com/tmux/tmux) | `brew install tmux` | Install with your distro package manager |
-| [Neovim](https://neovim.io) | `brew install neovim` | Install with your distro package manager |
-| [fzf](https://github.com/junegunn/fzf) | `brew install fzf` | Install with your distro package manager |
-| [Zsh](https://www.zsh.org) | Usually pre-installed on macOS | Usually available via your distro package manager |
-| [fd](https://github.com/sharkdp/fd) | `brew install fd` | Install with your distro package manager |
-| [bat](https://github.com/sharkdp/bat) | `brew install bat` | Install with your distro package manager |
-| [zoxide](https://github.com/ajeetdsouza/zoxide) | `brew install zoxide` | Install with your distro package manager |
-| [Atuin](https://atuin.sh) | `brew install atuin` | Install with your distro package manager |
+| Tool                                            | macOS / Homebrew               | Linux                                                             |
+| ----------------------------------------------- | ------------------------------ | ----------------------------------------------------------------- |
+| [Ghostty](https://ghostty.org)                  | Download from website          | Download from website or install with your distro package manager |
+| [Tmux](https://github.com/tmux/tmux)            | `brew install tmux`            | Install with your distro package manager                          |
+| [Neovim](https://neovim.io)                     | `brew install neovim`          | Install with your distro package manager                          |
+| [fzf](https://github.com/junegunn/fzf)          | `brew install fzf`             | Install with your distro package manager                          |
+| [Zsh](https://www.zsh.org)                      | Usually pre-installed on macOS | Usually available via your distro package manager                 |
+| [fd](https://github.com/sharkdp/fd)             | `brew install fd`              | Install with your distro package manager                          |
+| [bat](https://github.com/sharkdp/bat)           | `brew install bat`             | Install with your distro package manager                          |
+| [zoxide](https://github.com/ajeetdsouza/zoxide) | `brew install zoxide`          | Install with your distro package manager                          |
+| [Atuin](https://atuin.sh)                       | `brew install atuin`           | Install with your distro package manager                          |
 
 ### Linux notes
 
@@ -133,12 +135,14 @@ make build
 ```
 
 The TUI installer will:
+
 1. ✅ Detect your OS and install prefix
 2. ✅ Check for installed tools (skips configs for missing tools)
 3. ✅ Backup your existing configs to `~/.devrocket-backup/`
 4. ✅ Copy configs from the embedded binary to your config locations
-5. ✅ Create `~/.zshrc.local` for your private aliases
-6. ✅ Ask before replacing an existing `~/.zshrc.local`
+5. ✅ Bootstrap local Neovim tool dependencies from `configs/nvim/.tools/*` when manifests are present
+6. ✅ Create `~/.zshrc.local` for your private aliases
+7. ✅ Ask before replacing an existing `~/.zshrc.local`
 
 ## 🧭 Installation Flow
 
@@ -155,18 +159,20 @@ The TUI installer will:
 4. Open `nvim` and wait for LazyVim to sync plugins
 5. Edit `~/.zshrc.local` for your private aliases (passwords, SSH, etc.)
 
+> Note: if a Neovim config ships local tool manifests under `configs/nvim/.tools/` (for example `blade-formatter`), the installer will try to run `npm ci` or `npm install` automatically in those tool directories after copying the config.
+
 > If you already had a `~/.zshrc.local`, the installer now lets you keep it as-is or replace it explicitly. It will not overwrite it silently.
 
 ## 📁 What Gets Installed
 
 The TUI installer copies configs from the embedded binary (no internet required after install):
 
-| Component | Target (system) |
-|-----------|-----------------|
-| **Ghostty** | `~/.config/ghostty/` |
-| **Tmux** | `~/.tmux.conf` |
-| **Neovim** | `~/.config/nvim/` |
-| **Zsh** | `~/.zshrc`, `~/.p10k.zsh` |
+| Component      | Target (system)                                                 |
+| -------------- | --------------------------------------------------------------- |
+| **Ghostty**    | `~/.config/ghostty/`                                            |
+| **Tmux**       | `~/.tmux.conf`                                                  |
+| **Neovim**     | `~/.config/nvim/`                                               |
+| **Zsh**        | `~/.zshrc`, `~/.p10k.zsh`                                       |
 | **Cheatsheet** | `$BIN_DIR/tmux-cheatsheet` (`~/.local/bin` on Linux by default) |
 
 Each component can be individually selected or deselected in the TUI before installing.
@@ -177,52 +183,52 @@ Each component can be individually selected or deselected in the TUI before inst
 
 #### Fast Navigation (NO prefix — 1 keystroke!)
 
-| Key | Action |
-|-----|--------|
-| `Alt+1-9` | Jump to window by number |
-| `Alt+n` / `Alt+p` | Next / previous window |
-| `Alt+t` | New window |
-| `Alt+w` | Close window |
-| `Alt+g` | Floating scratch popup |
-| `Alt+c` | **Cheatsheet popup** |
-| `Ctrl+h/j/k/l` | Navigate panes ↔ Neovim splits (seamless) |
+| Key               | Action                                     |
+| ----------------- | ------------------------------------------ |
+| `Alt+1-9`         | Jump to window by number                   |
+| `Alt+n` / `Alt+p` | Next / previous window                     |
+| `Alt+t`           | New window                                 |
+| `Alt+w`           | Close window                               |
+| `Alt+g`           | Floating scratch popup                     |
+| `Alt+c`           | **Cheatsheet popup**                       |
+| `Ctrl+h/j/k/l`    | Navigate panes ↔ Neovim splits (seamless) |
 
 #### With Prefix (`C-a`)
 
-| Key | Action |
-|-----|--------|
-| `C-a → v` | Split vertical |
-| `C-a → d` | Split horizontal |
-| `C-a → z` | Zoom pane (toggle) |
-| `C-a → s` | Session picker |
-| `C-a → w` | Window picker |
+| Key       | Action              |
+| --------- | ------------------- |
+| `C-a → v` | Split vertical      |
+| `C-a → d` | Split horizontal    |
+| `C-a → z` | Zoom pane (toggle)  |
+| `C-a → s` | Session picker      |
+| `C-a → w` | Window picker       |
 | `C-a → [` | Copy mode (vi keys) |
 
 ### Neovim / LazyVim (leader: `Space`)
 
-| Key | Action |
-|-----|--------|
-| `<leader>ff` | Find files |
-| `<leader>fg` | Live grep |
-| `<leader>fb` | Find buffers |
+| Key           | Action                           |
+| ------------- | -------------------------------- |
+| `<leader>ff`  | Find files                       |
+| `<leader>fg`  | Live grep                        |
+| `<leader>fb`  | Find buffers                     |
 | `<leader>1-5` | Harpoon: jump to bookmarked file |
-| `<leader>ha` | Harpoon: add file |
-| `-` | Oil: navigate filesystem |
-| `s` | Flash: jump navigation |
-| `gpd` | Preview definition |
-| `<leader>z` | Zen mode |
-| `<leader>gg` | LazyGit |
+| `<leader>ha`  | Harpoon: add file                |
+| `-`           | Oil: navigate filesystem         |
+| `s`           | Flash: jump navigation           |
+| `gpd`         | Preview definition               |
+| `<leader>z`   | Zen mode                         |
+| `<leader>gg`  | LazyGit                          |
 
 ### Cheatsheet Popup
 
 Press **`Alt+c`** anywhere in tmux to open the filterable cheatsheet.
 
-| Key | Action |
-|-----|--------|
-| Type anything | Filter entries |
-| `Tab` | Cycle to next category |
-| `Shift+Tab` | Cycle to previous category |
-| `ESC` | Close |
+| Key           | Action                     |
+| ------------- | -------------------------- |
+| Type anything | Filter entries             |
+| `Tab`         | Cycle to next category     |
+| `Shift+Tab`   | Cycle to previous category |
+| `ESC`         | Close                      |
 
 Categories: ALL → TMUX → NVIM → VIM-MOTIONS → ZSH → GHOSTTY → TIPS
 
@@ -253,6 +259,7 @@ export OPENAI_API_KEY="sk-..."
 Run `dr-sys` and select **Uninstall** from the main menu.
 
 This will:
+
 - Remove all configs managed by the installer
 - Restore your original configs from backup (if backup was enabled)
 - **Preserve** `~/.zshrc.local` (your private data is safe)
@@ -260,6 +267,7 @@ This will:
 ## 🎨 Theme
 
 The entire ecosystem uses the **Kanagawa Dragon** color scheme:
+
 - Ghostty: Custom Gentleman theme with Kanagawa colors
 - Tmux: `tmux-kanagawa` plugin (dragon variant)
 - Neovim: `gentleman-kanagawa-blur` colorscheme
