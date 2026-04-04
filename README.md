@@ -135,6 +135,27 @@ make build
 ./bin/dr-sys
 ```
 
+## 🚀 Release Automation
+
+Releases are automated with GitHub Actions.
+
+- Pushing a tag like `v0.1.9` triggers GoReleaser.
+- GoReleaser publishes GitHub release assets for macOS/Linux.
+- The Homebrew cask in `IsaiasUziel/homebrew-devrocket-ecosystem` is updated automatically.
+- A validation workflow can install the published cask and verify `dr-sys --help` plus `brew audit`.
+
+### Required GitHub Secret
+
+- `TAP_GITHUB_TOKEN` — personal access token with permission to update:
+  - `IsaiasUziel/devrocket-ecosystem`
+  - `IsaiasUziel/homebrew-devrocket-ecosystem`
+
+### Recommended token scope
+
+- Fine-grained token scoped only to those two repositories
+- Repository contents: read/write
+- Metadata: read
+
 The TUI installer will:
 
 1. ✅ Detect your OS and install prefix

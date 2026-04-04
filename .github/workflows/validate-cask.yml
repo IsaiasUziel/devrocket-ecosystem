@@ -1,0 +1,29 @@
+name: Validate Homebrew Cask
+
+on:
+  workflow_dispatch:
+  release:
+    types:
+      - published
+
+jobs:
+  validate-cask:
+    runs-on: macos-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Set up Homebrew
+        id: set-up-homebrew
+        uses: Homebrew/actions/setup-homebrew@master
+
+      - name: Tap repository
+        run: brew tap isaiasuziel/devrocket-ecosystem
+
+      - name: Install cask
+        run: brew install --cask isaiasuziel/devrocket-ecosystem/devrocket-ecosystem
+
+      - name: Verify binary help
+        run: dr-sys --help
+
+      - name: Audit cask
+        run: brew audit --cask isaiasuziel/devrocket-ecosystem/devrocket-ecosystem
