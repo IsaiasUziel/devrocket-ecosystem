@@ -28,7 +28,8 @@
 | **Ghostty**    | Terminal emulator    | Kanagawa theme, custom shaders, optimized keybindings           |
 | **Tmux**       | Terminal multiplexer | Prefix `C-a`, seamless navigation with Neovim, popup cheatsheet |
 | **Neovim**     | Editor (LazyVim)     | 29+ plugins, Harpoon2, Oil.nvim, Flash.nvim, LSP                |
-| **Zsh**        | Shell                | Powerlevel10k, autocomplete, syntax highlighting, Atuin, zoxide |
+| **Zsh**        | Shell                | Powerlevel10k, autocomplete, syntax highlighting, zoxide         |
+| **Atuin**      | Shell history        | Search, sync v2 baseline, shell workflow recall                  |
 | **Cheatsheet** | Tmux popup           | Filterable keybinding reference with category cycling (Alt+c)   |
 
 ## 🏗️ Architecture
@@ -141,13 +142,14 @@ The TUI installer will:
 3. ✅ Backup your existing configs to `~/.devrocket-backup/`
 4. ✅ Copy configs from the embedded binary to your config locations
 5. ✅ Bootstrap local Neovim tool dependencies from `configs/nvim/.tools/*` when manifests are present
-6. ✅ Create `~/.zshrc.local` for your private aliases
-7. ✅ Ask before replacing an existing `~/.zshrc.local`
+6. ✅ Install a baseline Atuin config when Atuin is available
+7. ✅ Create `~/.zshrc.local` for your private aliases
+8. ✅ Ask before replacing an existing `~/.zshrc.local`
 
 ## 🧭 Installation Flow
 
 1. **Launch the TUI** — choose `Install`, `Uninstall`, or `Quit`
-2. **Select components** — Ghostty, Tmux, Neovim, Zsh, Cheatsheet
+2. **Select components** — Ghostty, Tmux, Neovim, Zsh, Atuin, Cheatsheet
 3. **Run pre-flight checks** - tool detection, OS info, install prefix, backup status
 4. **Install with feedback** — per-component progress and success/warn/error summary
 
@@ -173,6 +175,7 @@ The TUI installer copies configs from the embedded binary (no internet required 
 | **Tmux**       | `~/.tmux.conf`                                                  |
 | **Neovim**     | `~/.config/nvim/`                                               |
 | **Zsh**        | `~/.zshrc`, `~/.p10k.zsh`                                       |
+| **Atuin**      | `~/.config/atuin/config.toml`                                   |
 | **Cheatsheet** | `$BIN_DIR/tmux-cheatsheet` (`~/.local/bin` on Linux by default) |
 
 Each component can be individually selected or deselected in the TUI before installing.
@@ -263,6 +266,13 @@ This will:
 - Remove all configs managed by the installer
 - Restore your original configs from backup (if backup was enabled)
 - **Preserve** `~/.zshrc.local` (your private data is safe)
+
+## 🧩 Portability decisions
+
+- **Neovim** now includes a versioned `lazy-lock.json` so plugin installs are reproducible across machines.
+- **Snacks explorer** is configured to prefer the current working directory for your daily workflow, while keeping a root-based picker available.
+- **Atuin** is now a first-class managed component with a minimal portable baseline config.
+- **OpenCode** remains an external dependency in your workflow: Neovim integration is included, but `~/.config/opencode` is intentionally not managed by this repo.
 
 ## 🎨 Theme
 

@@ -38,6 +38,7 @@ func Uninstall() (*UninstallResult, error) {
 
 	// Remove known config directories if they are now empty.
 	cleanupDirs := []string{
+		filepath.Join(config.ConfigDir(), "atuin"),
 		filepath.Join(config.ConfigDir(), "ghostty", "shaders"),
 		filepath.Join(config.ConfigDir(), "ghostty", "themes"),
 		filepath.Join(config.ConfigDir(), "ghostty"),
@@ -72,6 +73,7 @@ func restoreBackup(backupDir string) (int, []string) {
 	var errors []string
 
 	restoreMap := map[string]string{
+		"atuin":     filepath.Join(config.ConfigDir(), "atuin"),
 		"config":    filepath.Join(config.ConfigDir(), "ghostty", "config"),
 		"themes":    filepath.Join(config.ConfigDir(), "ghostty", "themes"),
 		"shaders":   filepath.Join(config.ConfigDir(), "ghostty", "shaders"),

@@ -18,6 +18,7 @@ Thumbs.db
 
 # Neovim
 lazy-lock.json
+!configs/nvim/lazy-lock.json
 
 # Node
 node_modules/

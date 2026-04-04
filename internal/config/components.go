@@ -19,7 +19,7 @@ type Target struct {
 	IsDir  bool   // when true, the entire directory subtree is copied
 }
 
-// AllComponents returns the five supported installable components.
+// AllComponents returns the supported installable components.
 // Destination paths are resolved at call time using the current user environment.
 func AllComponents() []Component {
 	home := HomeDir()
@@ -65,6 +65,15 @@ func AllComponents() []Component {
 			Targets: []Target{
 				{Source: "zshrc", Dest: filepath.Join(home, ".zshrc")},
 				{Source: "p10k.zsh", Dest: filepath.Join(home, ".p10k.zsh")},
+			},
+		},
+		{
+			Name:        "Atuin",
+			Description: "Shell history sync/search baseline config",
+			EmbedDir:    "configs/atuin",
+			DetectCmd:   "atuin",
+			Targets: []Target{
+				{Source: "config.toml", Dest: filepath.Join(configDir, "atuin", "config.toml")},
 			},
 		},
 		{
