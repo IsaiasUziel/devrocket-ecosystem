@@ -41,8 +41,6 @@ homebrew_casks:
     license: "MIT"
     binaries:
       - dr-sys
-    url:
-      verified: github.com/IsaiasUziel/devrocket-ecosystem/
     hooks:
       post:
         install: |
