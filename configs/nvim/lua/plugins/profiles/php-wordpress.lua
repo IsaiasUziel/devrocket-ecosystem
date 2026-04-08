@@ -515,7 +515,7 @@ return {
             return
           end
 
-          LazyVim.format({ force = true })
+          require("conform").format({ force = true })
         end,
         desc = "Format",
       },
@@ -544,12 +544,7 @@ return {
     opts = function(_, opts)
       opts.formatters_by_ft = opts.formatters_by_ft or {}
       opts.formatters_by_ft.blade = { "blade_formatter_php" }
-      opts.formatters_by_ft.php = function(bufnr)
-        local filename = vim.api.nvim_buf_get_name(bufnr)
-        if is_wordpress_template_file(filename) then
-          return { "blade_formatter_php" }
-        end
-
+      opts.formatters_by_ft.php = function()
         return { "phpcbf_project" }
       end
 

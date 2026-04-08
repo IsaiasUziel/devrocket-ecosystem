@@ -26,6 +26,7 @@ return {
               php = "html",
               astro = "html",
               vue = "html",
+              svelte = "html",
             },
             experimental = {
               classRegex = {

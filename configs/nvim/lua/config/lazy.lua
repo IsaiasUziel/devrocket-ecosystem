@@ -47,7 +47,6 @@ require("lazy").setup({
     -- Editor plugins
     { import = "lazyvim.plugins.extras.editor.harpoon2" },
     { import = "lazyvim.plugins.extras.editor.mini-files" },
-    -- { import = "lazyvim.plugins.extras.editor.snacks_explorer" },
     { import = "lazyvim.plugins.extras.editor.snacks_picker" },
 
     -- Debgugging plugins
@@ -67,7 +66,6 @@ require("lazy").setup({
     -- Coding plugins
     { import = "lazyvim.plugins.extras.coding.mini-surround" },
     { import = "lazyvim.plugins.extras.editor.mini-diff" },
-    { import = "lazyvim.plugins.extras.coding.blink" },
 
     -- Utility plugins
     { import = "lazyvim.plugins.extras.util.mini-hipatterns" },
@@ -88,7 +86,6 @@ require("lazy").setup({
     version = false, -- Always use the latest git commit
     -- version = "*", -- Try installing the latest stable version for plugins that support semver
   },
-  install = { colorscheme = { "tokyonight", "habamax" } }, -- Specify colorschemes to install
   checker = { enabled = true }, -- Automatically check for plugin updates
   performance = {
     rtp = {

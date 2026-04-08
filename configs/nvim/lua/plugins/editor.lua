@@ -55,18 +55,34 @@ return {
     event = "BufReadPre", -- Load the plugin before reading a buffer
     opts = {
       highlighters = {
-        hsl_color = {
-          pattern = "hsl%(%d+,? %d+,? %d+%)", -- Pattern to match HSL color values
+        hex_color = {
+          pattern = "#[0-9a-fA-F]+",
           group = function(_, match)
-            local utils = require("config.gentleman.utils")
-            local h, s, l = match:match("hsl%((%d+),? (%d+),? (%d+)%)")
-            h, s, l = tonumber(h), tonumber(s), tonumber(l)
-            local hex_color = utils.hslToHex(h, s, l)
-            return MiniHipatterns.compute_hex_color_group(hex_color, "bg")
+            return MiniHipatterns.compute_hex_color_group(match, "bg")
           end,
         },
       },
     },
+  },
+  {
+    -- Plugin: vim-visual-multi
+    -- URL: https://github.com/mg979/vim-visual-multi
+    -- Description: Multi-cursor functionality for Vim (like VS Code's multi-cursor)
+    "mg979/vim-visual-multi",
+    init = function()
+      -- Global variables (vim.g) MUST be set in init to work correctly
+      vim.g.VM_default_mappings = 0
+      vim.g.VM_maps = {
+        ["Find Under"] = "<C-d>",
+        ["Find Subword Under"] = "<C-d>",
+      }
+    end,
+    -- event = "BufReadPre",
+    -- opts = {
+    -- Default configuration
+    -- cursor_behavior = "hold", -- keep cursor when selecting
+    --  report_system_errors = false,
+    --}, --
   },
   {
     -- Plugin: git.nvim

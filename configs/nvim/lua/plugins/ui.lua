@@ -24,23 +24,78 @@ local mode = {
   end,
 }
 
-local function codecompanion_adapter_name()
-  local chat = require("codecompanion").buf_get_chat(vim.api.nvim_get_current_buf())
-  if not chat then
-    return nil
+local allowed_colorschemes = {
+  ["gentleman-kanagawa-blur"] = true,
+  ["kanagawa-wave"] = true,
+  ["kanagawa-dragon"] = true,
+  ["kanagawa-lotus"] = true,
+  ["onedark"] = true,
+  ["onedark_dark"] = true,
+  ["onedark_darker"] = true,
+  ["onedark_cool"] = true,
+  ["onedark_deep"] = true,
+  ["onedark_warm"] = true,
+  ["onedark_warmer"] = true,
+  ["onedark_light"] = true,
+  ["onedark_vivid"] = true,
+}
+
+local function open_filtered_colorschemes()
+  local items = {}
+  local original = vim.g.colors_name
+  local applied_preview = nil
+
+  for _, name in ipairs(vim.fn.getcompletion("", "color")) do
+    if allowed_colorschemes[name] then
+      items[#items + 1] = {
+        text = name,
+        preview = {
+          text = "vim.cmd.colorscheme('" .. name .. "')",
+          ft = "lua",
+        },
+      }
+    end
   end
 
-  return " " .. chat.adapter.formatted_name
+  table.sort(items, function(a, b)
+    return a.text < b.text
+  end)
+
+  Snacks.picker({
+    title = "Colorschemes",
+    items = items,
+    format = function(item)
+      return { { item.text } }
+    end,
+    preview = function(ctx)
+      local item = ctx.item
+      if not item then
+        return
+      end
+
+      if item.text and item.text ~= applied_preview then
+        applied_preview = item.text
+        vim.cmd.colorscheme(item.text)
+      end
+
+      ctx.preview:set_lines({ "vim.cmd.colorscheme('" .. item.text .. "')" })
+      ctx.preview:highlight({ ft = "lua" })
+    end,
+    confirm = function(picker, item)
+      picker:close()
+      if item and item.text then
+        applied_preview = item.text
+        vim.cmd.colorscheme(item.text)
+      end
+    end,
+    on_close = function()
+      if original and applied_preview and original ~= applied_preview then
+        vim.cmd.colorscheme(original)
+      end
+    end,
+  })
 end
 
-local function codecompanion_current_model_name()
-  local chat = require("codecompanion").buf_get_chat(vim.api.nvim_get_current_buf())
-  if not chat then
-    return nil
-  end
-
-  return chat.settings.model
-end
 -- This file contains the configuration for various UI-related plugins in Neovim.
 return {
   -- Plugin: folke/todo-comments.nvim
@@ -117,39 +172,6 @@ return {
             },
           },
         },
-        {
-          filetypes = { "codecompanion" },
-          sections = {
-            lualine_a = {
-              mode,
-            },
-            lualine_b = {
-              codecompanion_adapter_name,
-            },
-            lualine_c = {
-              codecompanion_current_model_name,
-            },
-            lualine_x = {},
-            lualine_y = {
-              "progress",
-            },
-            lualine_z = {
-              "location",
-            },
-          },
-          inactive_sections = {
-            lualine_a = {},
-            lualine_b = {
-              codecompanion_adapter_name,
-            },
-            lualine_c = {},
-            lualine_x = {},
-            lualine_y = {
-              "progress",
-            },
-            lualine_z = {},
-          },
-        },
       },
     },
   },
@@ -209,6 +231,13 @@ return {
           Snacks.picker.buffers()
         end,
         desc = "Find Buffers",
+      },
+      {
+        "<leader>uC",
+        function()
+          open_filtered_colorschemes()
+        end,
+        desc = "Colorschemes (filtered)",
       },
     },
     opts = {
