@@ -161,3 +161,8 @@ function SaveFile()
     vim.notify("Error: " .. err, vim.log.levels.ERROR) -- Show the error message if it fails
   end
 end
+
+-- Format on demand withShift+Option+F
+vim.keymap.set({ "n", "v" }, "<M-F>", function()
+  require("conform").format({ async = true, lsp_format = "fallback" })
+end, { desc = "Format buffer" })

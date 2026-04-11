@@ -1,0 +1,85 @@
+{
+  "import": {
+    "scope": "javascript,typescript",
+    "prefix": "imp",
+    "body": [
+      "import { $2 } from '$1';"
+    ],
+    "description": "import"
+  },
+  "If Wordpress": {
+    "prefix": "ifwp",
+    "body": [
+      "<?php if($0) : ?>",
+      "<?php endif; ?>"
+    ],
+    "description": "If Wordpress"
+  },
+  "Foreach Wordpress": {
+    "prefix": "eachwp",
+    "body": [
+      "<?php foreach($0) : ?>",
+      "<?php endforeach; ?>"
+    ],
+    "description": "Foreach Wordpress"
+  },
+  "For Wordpress": {
+    "prefix": "forwp",
+    "body": [
+      "<?php for($$i=0; $$i < $1 ; $$i++) : ?>",
+      "<?php endfor; ?>"
+    ],
+    "description": "For Wordpress"
+  },
+  "If PHP": {
+    "prefix": "ifphp",
+    "body": [
+      "if ($0) :",
+      "endif;"
+    ],
+    "description": "If PHP"
+  },
+  "Foreach PHP": {
+    "prefix": "eachphp",
+    "body": [
+      "foreach($0) :",
+      "endforeach;"
+    ],
+    "description": "Foreach PHP"
+  },
+  "php": {
+    "prefix": "php",
+    "body": [
+      "<?php $0 ?>"
+    ],
+    "description": "php HTML"
+  },
+  "phpe": {
+    "prefix": "phpe",
+    "body": [
+      "<?= $0 ?>"
+    ],
+    "description": "php echo"
+  },
+  "field": {
+    "prefix": "field",
+    "body": [
+      "get_field('$0')"
+    ],
+    "description": "get_field('')"
+  },
+  "obj": {
+    "prefix": "obj",
+    "body": [
+      "$$0 = (object)$$0;"
+    ],
+    "description": "change to object"
+  },
+  "img": {
+    "prefix": "img",
+    "body": [
+      "<img src=\"$1\" alt=\"$2\" loading=\"lazy\" />"
+    ],
+    "description": "Image lazy"
+  }
+}

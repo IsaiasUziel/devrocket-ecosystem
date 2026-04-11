@@ -22,4 +22,16 @@ return {
       opts.formatters_by_ft = vim.tbl_deep_extend("force", opts.formatters_by_ft, formatters)
     end,
   },
+  {
+    "nvimtools/none-ls.nvim",
+    optional = true,
+    opts = function(_, opts)
+      local null_ls = require("null-ls")
+
+      opts.sources = opts.sources or {}
+      vim.list_extend(opts.sources, {
+        null_ls.builtins.diagnostics.eslint,
+      })
+    end,
+  },
 }

@@ -409,19 +409,29 @@ if vim.fn.exists(":PhpFormatPhpcbf") == 0 then
 end
 
 -- Keep PHP editing sane in mixed PHP/HTML templates.
--- We only disable Tree-sitter indent for PHP buffers; syntax highlighting remains intact.
+-- Disable Tree-sitter indentexpr and highlighting for PHP buffers.
+-- Tree-sitter struggles with mixed PHP/HTML in WordPress templates,
+-- causing incorrect parsing and poor syntax highlighting.
 vim.api.nvim_create_autocmd("FileType", {
   group = php_wordpress_group,
   pattern = "php",
-  desc = "Disable Tree-sitter indentexpr for PHP buffers",
+  desc = "Disable Tree-sitter indentexpr and highlighting for PHP buffers",
   callback = function(event)
     vim.schedule(function()
-      if vim.api.nvim_buf_is_valid(event.buf) then
-        vim.bo[event.buf].indentexpr = ""
-        vim.bo[event.buf].smartindent = false
-        vim.bo[event.buf].cindent = false
-        vim.bo[event.buf].autoindent = true
+      if not vim.api.nvim_buf_is_valid(event.buf) then
+        return
       end
+
+      -- Disable Tree-sitter indentation
+      vim.bo[event.buf].indentexpr = ""
+      vim.bo[event.buf].smartindent = true
+      vim.bo[event.buf].cindent = true
+      vim.bo[event.buf].autoindent = true
+
+      -- Disable Tree-sitter highlighting for PHP buffers
+      -- Use vim.treesitter.stop() for Neovim 0.10+
+      -- Falls back to regex-based syntax highlighting
+      pcall(vim.treesitter.stop, event.buf)
     end)
   end,
 })

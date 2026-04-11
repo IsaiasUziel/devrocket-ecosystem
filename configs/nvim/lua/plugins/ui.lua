@@ -24,12 +24,40 @@ local mode = {
   end,
 }
 
+local function get_codecompanion_chat()
+  local ok, codecompanion = pcall(require, "codecompanion")
+  if not ok then
+    return nil
+  end
+
+  return codecompanion.buf_get_chat(vim.api.nvim_get_current_buf())
+end
+
+local function codecompanion_adapter_name()
+  local chat = get_codecompanion_chat()
+  if not chat then
+    return nil
+  end
+
+  return " " .. chat.adapter.formatted_name
+end
+
+local function codecompanion_current_model_name()
+  local chat = get_codecompanion_chat()
+  if not chat then
+    return nil
+  end
+
+  return chat.settings.model
+end
+
 local allowed_colorschemes = {
   ["gentleman-kanagawa-blur"] = true,
   ["kanagawa-wave"] = true,
   ["kanagawa-dragon"] = true,
   ["kanagawa-lotus"] = true,
   ["onedark"] = true,
+  ["onedarkpro"] = true,
   ["onedark_dark"] = true,
   ["onedark_darker"] = true,
   ["onedark_cool"] = true,
@@ -172,6 +200,39 @@ return {
             },
           },
         },
+        {
+          filetypes = { "codecompanion" },
+          sections = {
+            lualine_a = {
+              mode,
+            },
+            lualine_b = {
+              codecompanion_adapter_name,
+            },
+            lualine_c = {
+              codecompanion_current_model_name,
+            },
+            lualine_x = {},
+            lualine_y = {
+              "progress",
+            },
+            lualine_z = {
+              "location",
+            },
+          },
+          inactive_sections = {
+            lualine_a = {},
+            lualine_b = {
+              codecompanion_adapter_name,
+            },
+            lualine_c = {},
+            lualine_x = {},
+            lualine_y = {
+              "progress",
+            },
+            lualine_z = {},
+          },
+        },
       },
     },
   },
@@ -232,13 +293,13 @@ return {
         end,
         desc = "Find Buffers",
       },
-      {
-        "<leader>uC",
-        function()
-          open_filtered_colorschemes()
-        end,
-        desc = "Colorschemes (filtered)",
-      },
+      -- {
+      --   "<leader>uC",
+      --   function()
+      --     open_filtered_colorschemes()
+      --   end,
+      --   desc = "Colorschemes (filtered)",
+      -- },
     },
     opts = {
       notifier = {},

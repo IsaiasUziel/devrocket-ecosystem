@@ -33,7 +33,7 @@ return {
         end
       end
 
-      opts.highlight = opts.highlight or { enabled = true }
+      opts.highlight = opts.highlight or { enable = true }
       opts.indent = opts.indent or { enabled = true }
 
       opts.ignore_install = vim.list_extend(opts.ignore_install or {}, { "phpdoc" })
@@ -56,12 +56,14 @@ return {
   ------------------------------------------------------------------
   {
     "hiphish/rainbow-delimiters.nvim",
+    event = "VeryLazy",
     config = function()
       local rd = require("rainbow-delimiters")
 
       vim.g.rainbow_delimiters = {
         strategy = {
           [""] = rd.strategy.global,
+          php = false, -- Disable rainbow-delimiters for PHP (WordPress templates)
         },
         query = {
           [""] = "rainbow-delimiters",

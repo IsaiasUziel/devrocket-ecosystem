@@ -13,6 +13,20 @@ return {
     opts = function(_, opts)
       opts.servers = opts.servers or {}
       opts.servers.tailwindcss = {
+        filetypes = {
+          "html",
+          "css",
+          "scss",
+          "javascript",
+          "javascriptreact",
+          "typescript",
+          "typescriptreact",
+          "vue",
+          "svelte",
+          "astro",
+          "php",
+          "blade",
+        },
         settings = {
           tailwindCSS = {
             classAttributes = {
@@ -35,6 +49,8 @@ return {
                 "cva\\(([^)]*)\\)",
                 "twMerge\\(([^)]*)\\)",
                 "twJoin\\(([^)]*)\\)",
+                -- Match classes in PHP strings: 'class-name' or "class-name"
+                { "(['\"])([^'\"]*)['\"]", "class" },
               },
             },
           },
