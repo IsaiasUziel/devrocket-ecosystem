@@ -42,28 +42,20 @@ custom-shader = shaders/cursor_smear_gentleman.glsl
 # │                            INPUT / KEYBINDINGS                               │
 # └──────────────────────────────────────────────────────────────────────────────┘
 
-# macOS only: LEFT Option sends ESC prefix (\e) so tmux/nvim get Alt sequences.
-# RIGHT Option stays available for macOS special characters.
+# macOS only: keep native Option input enabled so Spanish characters and dead keys
+# continue to work (ñ, accents, symbols, etc.).
+#
+# IMPORTANT:
+# - We intentionally DO NOT use `macos-option-as-alt`
+# - Tmux window/scratch/cheatsheet actions live behind the tmux prefix (`C-a`)
+# - Pane navigation remains on Ctrl+h/j/k/l
+#
 # Linux note: Alt passthrough usually works without this option, and Super/global
 # shortcuts vary by desktop environment, so Linux-specific overrides are safer in
 # a local Ghostty config than forcing a cross-desktop default here.
-macos-option-as-alt = left
-
-# Unbind macOS default Option+arrow behavior so Alt+arrows pass through as escape sequences
-keybind = alt+right=esc:f
-keybind = alt+left=esc:b
-
-# Explicitly unbind Alt+h/j/k/l so they pass through to tmux as \eh \ej \ek \el
-# (Ghostty may intercept them even without an explicit binding due to macOS modifier handling)
-# Tmux pane navigation uses C-h/j/k/l via vim-tmux-navigator — these are for programs
-# inside the terminal (e.g., fzf, lazygit, or any ncurses app that uses Alt+hjkl)
-keybind = alt+h=unbind
-keybind = alt+j=unbind
-keybind = alt+k=unbind
-keybind = alt+l=unbind
 
 # Ghostty splits: NOT used (tmux handles all multiplexing)
-# Alt+v, Alt+d, Ctrl+Shift+h/j/k/l — all intentionally NOT bound here
+# Alt/Option-based bindings are intentionally avoided here to preserve macOS input.
 
 # ── Cmd+K: clear screen ────────────────────────────────────────────────────────
 # NOTE: clear_screen sends Ctrl+L to the foreground process.
@@ -77,7 +69,7 @@ keybind = cmd+k=clear_screen
 keybind = shift+enter=text:\x1b\r
 
 # Open file with nvim (write 'nvim' first, then use this keybinding)
-keybind = alt+s=write_screen_file:paste
+keybind = cmd+shift+s=write_screen_file:paste
 
 # ── Global keybinds (work even when Ghostty is in background) ──────────────────
 # Toggle Ghostty window visibility from anywhere

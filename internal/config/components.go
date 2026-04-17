@@ -41,7 +41,7 @@ func AllComponents() []Component {
 		},
 		{
 			Name:        "Tmux",
-			Description: "Multiplexer config with C-a prefix + fast nav",
+			Description: "Multiplexer config with C-a prefix + pane/navigation workflow",
 			EmbedDir:    "configs/tmux",
 			DetectCmd:   "tmux",
 			Targets: []Target{
@@ -78,7 +78,7 @@ func AllComponents() []Component {
 		},
 		{
 			Name:        "Cheatsheet",
-			Description: "Filterable popup with Alt+c (tmux plugin)",
+			Description: "Filterable popup opened from tmux prefix workflow",
 			EmbedDir:    "configs/cheatsheet",
 			Targets: []Target{
 				{Source: "tmux-cheatsheet", Dest: filepath.Join(binDir, "tmux-cheatsheet")},

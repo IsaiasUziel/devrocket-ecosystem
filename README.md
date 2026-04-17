@@ -30,7 +30,7 @@
 | **Neovim**     | Editor (LazyVim)     | 29+ plugins, Harpoon2, Oil.nvim, Flash.nvim, LSP                |
 | **Zsh**        | Shell                | Powerlevel10k, autocomplete, syntax highlighting, zoxide         |
 | **Atuin**      | Shell history        | Search, sync v2 baseline, shell workflow recall                  |
-| **Cheatsheet** | Tmux popup           | Filterable keybinding reference with category cycling (Alt+c)   |
+| **Cheatsheet** | Tmux popup           | Filterable keybinding reference from tmux prefix workflows      |
 
 ## 🏗️ Architecture
 
@@ -205,19 +205,19 @@ Each component can be individually selected or deselected in the TUI before inst
 
 ### Tmux (prefix: `C-a`)
 
-#### Fast Navigation (NO prefix — 1 keystroke!)
+#### Window & popup management (with prefix `C-a`)
 
 | Key               | Action                                     |
 | ----------------- | ------------------------------------------ |
-| `Alt+1-9`         | Jump to window by number                   |
-| `Alt+n` / `Alt+p` | Next / previous window                     |
-| `Alt+t`           | New window                                 |
-| `Alt+w`           | Close window                               |
-| `Alt+g`           | Floating scratch popup                     |
-| `Alt+c`           | **Cheatsheet popup**                       |
+| `C-a → 1-9`       | Jump to window by number                   |
+| `C-a → n / p`     | Next / previous window                     |
+| `C-a → t`         | New window                                 |
+| `C-a → w`         | Close window                               |
+| `C-a → g`         | Floating scratch popup                     |
+| `C-a → c`         | **Cheatsheet popup**                       |
 | `Ctrl+h/j/k/l`    | Navigate panes ↔ Neovim splits (seamless) |
 
-#### With Prefix (`C-a`)
+#### Additional tmux bindings (`C-a`)
 
 | Key       | Action              |
 | --------- | ------------------- |
@@ -245,7 +245,7 @@ Each component can be individually selected or deselected in the TUI before inst
 
 ### Cheatsheet Popup
 
-Press **`Alt+c`** anywhere in tmux to open the filterable cheatsheet.
+Press **`C-a → c`** inside tmux to open the filterable cheatsheet.
 
 | Key           | Action                     |
 | ------------- | -------------------------- |

@@ -281,7 +281,7 @@ func (m Model) viewResult() string {
 		b.WriteString(fmt.Sprintf("  3. Press %s inside tmux for TPM plugins\n", accentStyle.Render("C-a + I")))
 		b.WriteString(fmt.Sprintf("  4. Open %s and wait for LazyVim sync\n", accentStyle.Render("nvim")))
 		b.WriteString(fmt.Sprintf("  5. Edit %s for private aliases\n", accentStyle.Render("~/.zshrc.local")))
-		b.WriteString(fmt.Sprintf("  6. Press %s for cheatsheet popup\n", accentStyle.Render("Alt+c")))
+		b.WriteString(fmt.Sprintf("  6. Press %s for cheatsheet popup\n", accentStyle.Render("C-a → c")))
 
 		for _, r := range m.results {
 			if len(r.Notes) == 0 {
