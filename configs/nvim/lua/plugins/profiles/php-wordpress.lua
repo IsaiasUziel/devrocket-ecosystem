@@ -120,6 +120,11 @@ local function is_wordpress_template_file(path)
     "^search%-.+%.php$",
     "^attachment%-.+%.php$",
     "^embed%-.+%.php$",
+    "^section%-.+%.php$",
+    "^component%-.+%.php$",
+    "^block%-.+%.php$",
+    "^hero%-.+%.php$",
+    "^modal%-.+%.php$",
   }
 
   if root_templates[basename] then
@@ -136,6 +141,8 @@ local function is_wordpress_template_file(path)
     or normalized:match("/template%-parts/") ~= nil
     or normalized:match("/parts/") ~= nil
     or normalized:match("/patterns/") ~= nil
+    or normalized:match("/components/") ~= nil
+    or normalized:match("/transient/") ~= nil
 end
 
 local function find_phpcs_standard(path)
@@ -144,6 +151,220 @@ local function find_phpcs_standard(path)
     upward = true,
   })[1]
   return standard and vim.fs.normalize(standard) or nil
+end
+
+--- Control keywords for WordPress alternative syntax.
+local WP_CONTROL_OPEN = { "if", "elseif", "foreach", "for", "while", "switch" }
+local WP_CONTROL_CLOSE_MAP = {
+  endif = "if",
+  endforeach = "foreach",
+  endfor = "for",
+  endwhile = "while",
+  endswitch = "switch",
+}
+
+--- Fix WordPress template formatting patterns after external formatters run.
+--- PASS 1: Collapses multi-line <?php keyword (...) : ?> to oneline.
+--- PASS 2: Fixes <?php end*; ?> indentation to match opening structures.
+---@param bufnr number Buffer number
+---@return boolean Whether changes were made
+local function fix_wp_template_patterns(bufnr)
+  local filename = vim.api.nvim_buf_get_name(bufnr)
+  if not is_wordpress_template_file(filename) then
+    return false
+  end
+
+  local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+  local changed = false
+
+  -- PASS 1: Collapse multi-line PHP control-structure openers to oneline.
+  --
+  -- 3-line pattern:
+  --   <indent><?php
+  --   <indent>keyword (condition) :
+  --   <indent>?>
+  --   → <indent><?php keyword (condition) : ?>
+  --
+  -- 2-line pattern:
+  --   <indent><?php keyword (condition) :
+  --   <indent>?>
+  --   → <indent><?php keyword (condition) : ?>
+
+  local collapsed = {}
+  local i = 1
+
+  while i <= #lines do
+    local line = lines[i]
+    local did_collapse = false
+
+    -- Try 3-line collapse: <?php \n keyword(...) : \n ?>
+    local php_indent = line:match("^(%s*)<%?php%s*$")
+    if php_indent and i + 2 <= #lines then
+      local next_line = lines[i + 1]
+      local close_line = lines[i + 2]
+
+      if close_line:match("^%s*%?>%s*$") then
+        -- Strip leading/trailing whitespace from the control line
+        local stripped = next_line:match("^%s*(.+)%s*$")
+        if stripped then
+          local is_alt_syntax = false
+          for _, kw in ipairs(WP_CONTROL_OPEN) do
+            if stripped:match("^" .. kw .. "%s*[%(]") then
+              is_alt_syntax = true
+              break
+            end
+          end
+          -- Also handle else: (no condition)
+          if not is_alt_syntax and stripped:match("^else%s*:") then
+            is_alt_syntax = true
+          end
+
+          if is_alt_syntax then
+            -- Normalize: trim trailing colon+spaces, add " :"
+            local content = stripped:gsub("%s*:%s*$", "") .. " :"
+            table.insert(collapsed, php_indent .. "<?php " .. content .. " ?>")
+            changed = true
+            i = i + 3
+            did_collapse = true
+          end
+        end
+      end
+    end
+
+    -- Try 2-line collapse: <?php keyword(...) : \n ?>
+    if not did_collapse then
+      local after_php = line:match("^%s*<%?php%s+(.+)%s*$")
+      if after_php and not line:match("%?>%s*$") then
+        -- Line has <?php and content but no closing ?>
+        local is_alt_with_colon = false
+        for _, kw in ipairs(WP_CONTROL_OPEN) do
+          if after_php:match("^" .. kw .. "%s*[%(]") and after_php:match(":%s*$") then
+            is_alt_with_colon = true
+            break
+          end
+        end
+        if not is_alt_with_colon and after_php:match("^else%s*:") then
+          is_alt_with_colon = true
+        end
+
+        if is_alt_with_colon and i + 1 <= #lines and lines[i + 1]:match("^%s*%?>%s*$") then
+          local line_indent = line:match("^(%s*)")
+          local content = after_php:gsub("%s*:%s*$", "") .. " :"
+          table.insert(collapsed, line_indent .. "<?php " .. content .. " ?>")
+          changed = true
+          i = i + 2
+          did_collapse = true
+        end
+      end
+    end
+
+    if not did_collapse then
+      table.insert(collapsed, line)
+      i = i + 1
+    end
+  end
+
+  -- PASS 2: Fix closing-tag indentation using a stack of opening structures.
+  --
+  -- Stack tracks: { keyword, indent }
+  -- Opening  <?php keyword (...) : ?> → push
+  -- Else/elseif                          → use top indent (don't push)
+  -- Closing  <?php end*; ?>             → pop and apply indent
+
+  local result = {}
+  local stack = {}
+
+  for _, line in ipairs(collapsed) do
+    -- Check for opening control structure: <?php keyword (...) : ?>
+    local line_indent = line:match("^([ \t]*)")
+    local after_php = line:match("^%s*<%?php%s+(.+)%s*%?>")
+
+    if after_php then
+      -- Try opening keywords (push to stack)
+      local pushed = false
+      for _, kw in ipairs({ "if", "foreach", "for", "while", "switch" }) do
+        if after_php:match("^" .. kw .. "%s*[%(]") then
+          table.insert(stack, { keyword = kw, indent = line_indent })
+          table.insert(result, line)
+          pushed = true
+          break
+        end
+      end
+
+      if not pushed then
+        -- Check for else / elseif (use top of stack, don't push)
+        if after_php:match("^else%s*:") or after_php:match("^elseif%s*[%(]") then
+          if #stack > 0 then
+            local content = line:match("^%s*(.*)")
+            local new_line = stack[#stack].indent .. content
+            if new_line ~= line then
+              changed = true
+            end
+            table.insert(result, new_line)
+          else
+            table.insert(result, line)
+          end
+          pushed = true
+        end
+
+        -- Check for closing: <?php endif; ?> etc.
+        if not pushed then
+          local close_kw = after_php:match("^(end%w+)%s*;")
+          if close_kw then
+            local expected = WP_CONTROL_CLOSE_MAP[close_kw]
+            if expected and #stack > 0 then
+              -- Search stack from top to find matching keyword
+              local found_idx = nil
+              for j = #stack, 1, -1 do
+                if stack[j].keyword == expected then
+                  found_idx = j
+                  break
+                end
+              end
+
+              if found_idx then
+                local content = line:match("^%s*(.*)")
+                local new_line = stack[found_idx].indent .. content
+                if new_line ~= line then
+                  changed = true
+                end
+                table.insert(result, new_line)
+                -- Remove everything from found_idx to top
+                for _ = found_idx, #stack do
+                  table.remove(stack)
+                end
+              else
+                -- No matching opening found — pass through unchanged
+                table.insert(result, line)
+              end
+            else
+              -- Unknown closing keyword or empty stack — pass through
+              table.insert(result, line)
+            end
+          else
+            -- Not a control structure line (variable assignment, echo, etc.)
+            table.insert(result, line)
+          end
+        end
+      end
+    else
+      -- Not a <?php ... ?> oneline line — pass through
+      table.insert(result, line)
+    end
+  end
+
+  if changed then
+    -- Save cursor position
+    local cursor_ok, cursor = pcall(vim.api.nvim_win_get_cursor, 0)
+    vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, result)
+    if cursor_ok then
+      local row = math.min(cursor[1], #result)
+      pcall(vim.api.nvim_win_set_cursor, 0, { row, cursor[2] })
+    end
+    return true
+  end
+
+  return false
 end
 
 local function resolve_linter(name, bufnr)
@@ -270,14 +491,13 @@ end
 
 local function format_php_with(formatter, success_message)
   local bufnr = vim.api.nvim_get_current_buf()
-  local filename = vim.api.nvim_buf_get_name(bufnr)
   local ok, conform = pcall(require, "conform")
   if not ok then
     vim.notify("conform.nvim is not available", vim.log.levels.ERROR)
     return
   end
 
-  if formatter == "blade_formatter_php" and not is_wordpress_template_file(filename) then
+  if formatter == "blade_formatter_php" and not is_wordpress_template_file(vim.api.nvim_buf_get_name(bufnr)) then
     vim.notify("Current buffer is not detected as a WordPress template", vim.log.levels.WARN)
     return
   end
@@ -294,6 +514,12 @@ local function format_php_with(formatter, success_message)
     lsp_format = "never",
     formatters = { formatter },
   })
+
+  -- Post-process: fix WordPress template patterns after formatter runs.
+  local filename = vim.api.nvim_buf_get_name(bufnr)
+  if is_wordpress_template_file(filename) then
+    fix_wp_template_patterns(bufnr)
+  end
 
   if success_message then
     vim.notify(success_message)
@@ -355,6 +581,13 @@ local function format_php_auto()
     lsp_format = "never",
     formatters = formatters,
   })
+
+  -- Post-process: fix WordPress template patterns after external formatters run.
+  local filename = vim.api.nvim_buf_get_name(bufnr)
+  if is_wordpress_template_file(filename) then
+    fix_wp_template_patterns(bufnr)
+  end
+
   notify_php_formatter(bufnr, "format")
 end
 
@@ -409,30 +642,22 @@ if vim.fn.exists(":PhpFormatPhpcbf") == 0 then
 end
 
 -- Keep PHP editing sane in mixed PHP/HTML templates.
--- Disable Tree-sitter indentexpr and highlighting for PHP buffers.
 -- Tree-sitter struggles with mixed PHP/HTML in WordPress templates,
--- causing incorrect parsing and poor syntax highlighting.
 vim.api.nvim_create_autocmd("FileType", {
   group = php_wordpress_group,
   pattern = "php",
-  desc = "Disable Tree-sitter indentexpr and highlighting for PHP buffers",
   callback = function(event)
-    vim.schedule(function()
-      if not vim.api.nvim_buf_is_valid(event.buf) then
-        return
-      end
+    vim.opt_local.foldmethod = "indent"
+    vim.opt_local.foldlevel = 99 -- abre todo por defecto
 
-      -- Disable Tree-sitter indentation
-      vim.bo[event.buf].indentexpr = ""
-      vim.bo[event.buf].smartindent = true
-      vim.bo[event.buf].cindent = true
-      vim.bo[event.buf].autoindent = true
-
-      -- Disable Tree-sitter highlighting for PHP buffers
-      -- Use vim.treesitter.stop() for Neovim 0.10+
-      -- Falls back to regex-based syntax highlighting
-      pcall(vim.treesitter.stop, event.buf)
-    end)
+    -- Force tabs for WordPress template files (WPCS compliance)
+    local filename = vim.api.nvim_buf_get_name(event.buf)
+    if is_wordpress_template_file(filename) then
+      vim.opt_local.expandtab = false  -- Use real tabs, not spaces
+      vim.opt_local.shiftwidth = 4
+      vim.opt_local.tabstop = 4
+      vim.opt_local.softtabstop = 4
+    end
   end,
 })
 
@@ -446,6 +671,31 @@ vim.api.nvim_create_autocmd("BufWritePost", {
         notify_php_formatter(event.buf, "save")
       end
     end)
+  end,
+})
+
+-- Auto-fix WordPress template patterns after saving.
+-- Runs the post-processor after conform's format_on_save and rewrites the file
+-- if any patterns were fixed (collapsing multi-line control structures, fixing
+-- closing-tag indentation). Uses `noautocmd write` to avoid recursive triggers.
+vim.api.nvim_create_autocmd("BufWritePost", {
+  group = php_wordpress_group,
+  pattern = "*.php",
+  desc = "Fix WordPress template patterns after save",
+  callback = function(event)
+    local bufnr = event.buf
+    if not vim.api.nvim_buf_is_valid(bufnr) then
+      return
+    end
+
+    local filename = vim.api.nvim_buf_get_name(bufnr)
+    if not is_wordpress_template_file(filename) then
+      return
+    end
+
+    if fix_wp_template_patterns(bufnr) then
+      vim.cmd("silent! noautocmd write")
+    end
   end,
 })
 
@@ -482,7 +732,7 @@ return {
         local phpcs = require("lint.linters.phpcs")
         local filename = vim.api.nvim_buf_get_name(0)
         local standard = find_phpcs_standard(filename)
-        local args = { "--report=json" }
+        local args = { "-q", "--report=json" }
 
         if standard then
           table.insert(args, "--standard=" .. standard)
@@ -554,7 +804,13 @@ return {
     opts = function(_, opts)
       opts.formatters_by_ft = opts.formatters_by_ft or {}
       opts.formatters_by_ft.blade = { "blade_formatter_php" }
-      opts.formatters_by_ft.php = function()
+      opts.formatters_by_ft.php = function(bufnr)
+        local filename = vim.api.nvim_buf_get_name(bufnr)
+        if is_wordpress_template_file(filename) then
+          -- WordPress template: format HTML first, then PHPCBF enforces tabs (WPCS)
+          return { "blade_formatter_php", "phpcbf_project" }
+        end
+        -- Pure PHP file: only PHPCBF
         return { "phpcbf_project" }
       end
 
@@ -563,7 +819,7 @@ return {
         command = function(_, ctx)
           return find_node_executable(ctx.filename, "blade-formatter")
         end,
-        args = { "--stdin", "--php-version", "8.2", "--indent-size", "4", "--wrap-line-length", "120" },
+        args = { "--stdin", "--no-php-syntax-check", "--php-version", "8.2", "--indent-size", "4", "--wrap-line-length", "120" },
         stdin = true,
         cwd = function(_, ctx)
           return resolve_search_path(ctx.filename)

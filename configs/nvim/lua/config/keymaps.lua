@@ -10,31 +10,59 @@ vim.keymap.set("i", "<C-b>", "<C-o>de")
 -- Map Ctrl+c to escape from other modes
 vim.keymap.set({ "i", "n", "v" }, "<C-c>", [[<C-\><C-n>]])
 
--- Screen Keys
-vim.keymap.set({ "n" }, "<leader>uk", "<cmd>Screenkey<CR>")
+local function get_visual_selection()
+  local start_pos = vim.fn.getpos("'<")
+  local end_pos = vim.fn.getpos("'>")
+  local lines = vim.fn.getline(start_pos[2], end_pos[2])
 
------ Tmux Navigation ------
-local nvim_tmux_nav = require("nvim-tmux-navigation")
+  if #lines == 0 then
+    return nil
+  end
 
-vim.keymap.set("n", "<C-h>", nvim_tmux_nav.NvimTmuxNavigateLeft) -- Navigate to the left pane
-vim.keymap.set("n", "<C-j>", nvim_tmux_nav.NvimTmuxNavigateDown) -- Navigate to the bottom pane
-vim.keymap.set("n", "<C-k>", nvim_tmux_nav.NvimTmuxNavigateUp) -- Navigate to the top pane
-vim.keymap.set("n", "<C-l>", nvim_tmux_nav.NvimTmuxNavigateRight) -- Navigate to the right pane
-vim.keymap.set("n", "<C-\\>", nvim_tmux_nav.NvimTmuxNavigateLastActive) -- Navigate to the last active pane
-vim.keymap.set("n", "<C-Space>", nvim_tmux_nav.NvimTmuxNavigateNext) -- Navigate to the next pane
+  if #lines == 1 then
+    lines[1] = string.sub(lines[1], start_pos[3], end_pos[3])
+  else
+    lines[1] = string.sub(lines[1], start_pos[3])
+    lines[#lines] = string.sub(lines[#lines], 1, end_pos[3])
+  end
 
------ OBSIDIAN -----
-vim.keymap.set("n", "<leader>oc", "<cmd>Obsidian check<CR>", { desc = "Obsidian Check Checkbox" })
-vim.keymap.set("n", "<leader>ot", "<cmd>Obsidian template<CR>", { desc = "Insert Obsidian Template" })
-vim.keymap.set("n", "<leader>oo", "<cmd>Obsidian open<CR>", { desc = "Open in Obsidian App" })
-vim.keymap.set("n", "<leader>ob", "<cmd>Obsidian backlinks<CR>", { desc = "Show Obsidian Backlinks" })
-vim.keymap.set("n", "<leader>ol", "<cmd>Obsidian links<CR>", { desc = "Show Obsidian Links" })
-vim.keymap.set("n", "<leader>on", "<cmd>Obsidian new<CR>", { desc = "Create New Note" })
-vim.keymap.set("n", "<leader>os", "<cmd>Obsidian search<CR>", { desc = "Search Obsidian" })
-vim.keymap.set("n", "<leader>oq", "<cmd>Obsidian quick-switch<CR>", { desc = "Quick Switch" })
+  return table.concat(lines, "\n")
+end
 
------ OIL -----
-vim.keymap.set("n", "-", "<CMD>Oil<CR>", { desc = "Open parent directory" })
+local function grep_selected_text(opts)
+  local selected_text = get_visual_selection()
+  if not selected_text then
+    return
+  end
+
+  selected_text = vim.fn.escape(selected_text, "\\.*[]^$()+?{}")
+
+  if pcall(require, "snacks") then
+    require("snacks").picker.grep(vim.tbl_extend("force", { search = selected_text }, opts or {}))
+  elseif pcall(require, "fzf-lua") then
+    require("fzf-lua").live_grep(vim.tbl_extend("force", { search = selected_text }, opts or {}))
+  else
+    vim.notify("No grep picker available", vim.log.levels.ERROR)
+  end
+end
+
+local function save_file()
+  if vim.fn.empty(vim.fn.expand("%:t")) == 1 then
+    vim.notify("No file to save", vim.log.levels.WARN)
+    return
+  end
+
+  local filename = vim.fn.expand("%:t")
+  local success, err = pcall(function()
+    vim.cmd("silent! write")
+  end)
+
+  if success then
+    vim.notify(filename .. " Saved!")
+  else
+    vim.notify("Error: " .. err, vim.log.levels.ERROR)
+  end
+end
 
 -- Delete all buffers but the current one
 vim.keymap.set(
@@ -45,94 +73,32 @@ vim.keymap.set(
 )
 
 -- Disable key mappings in insert mode
-vim.api.nvim_set_keymap("i", "<A-j>", "<Nop>", { noremap = true, silent = true })
-vim.api.nvim_set_keymap("i", "<A-k>", "<Nop>", { noremap = true, silent = true })
+vim.keymap.set("i", "<A-j>", "<Nop>", { silent = true })
+vim.keymap.set("i", "<A-k>", "<Nop>", { silent = true })
 
 -- Disable key mappings in normal mode
-vim.api.nvim_set_keymap("n", "<A-j>", "<Nop>", { noremap = true, silent = true })
-vim.api.nvim_set_keymap("n", "<A-k>", "<Nop>", { noremap = true, silent = true })
+vim.keymap.set("n", "<A-j>", "<Nop>", { silent = true })
+vim.keymap.set("n", "<A-k>", "<Nop>", { silent = true })
 
 -- Disable key mappings in visual block mode
-vim.api.nvim_set_keymap("x", "<A-j>", "<Nop>", { noremap = true, silent = true })
-vim.api.nvim_set_keymap("x", "<A-k>", "<Nop>", { noremap = true, silent = true })
-vim.api.nvim_set_keymap("x", "J", "<Nop>", { noremap = true, silent = true })
-vim.api.nvim_set_keymap("x", "K", "<Nop>", { noremap = true, silent = true })
+vim.keymap.set("x", "<A-j>", "<Nop>", { silent = true })
+vim.keymap.set("x", "<A-k>", "<Nop>", { silent = true })
+vim.keymap.set("x", "J", "<Nop>", { silent = true })
+vim.keymap.set("x", "K", "<Nop>", { silent = true })
 
 -- Redefine Ctrl+s to save with the custom function
-vim.api.nvim_set_keymap("n", "<C-s>", ":lua SaveFile()<CR>", { noremap = true, silent = true })
+vim.keymap.set("n", "<C-s>", save_file, { desc = "Save file", silent = true })
 
 -- Grep keybinding for visual mode - search selected text
 vim.keymap.set("v", "<leader>sg", function()
-  -- Get the selected text
-  local start_pos = vim.fn.getpos("'<")
-  local end_pos = vim.fn.getpos("'>")
-  local lines = vim.fn.getline(start_pos[2], end_pos[2])
-
-  if #lines == 0 then
-    return
-  end
-
-  -- Handle single line selection
-  if #lines == 1 then
-    lines[1] = string.sub(lines[1], start_pos[3], end_pos[3])
-  else
-    -- Handle multi-line selection
-    lines[1] = string.sub(lines[1], start_pos[3])
-    lines[#lines] = string.sub(lines[#lines], 1, end_pos[3])
-  end
-
-  local selected_text = table.concat(lines, "\n")
-
-  -- Escape special characters for grep
-  selected_text = vim.fn.escape(selected_text, "\\.*[]^$()+?{}")
-
-  -- Use the selected text for grep
-  if pcall(require, "snacks") then
-    require("snacks").picker.grep({ search = selected_text })
-  elseif pcall(require, "fzf-lua") then
-    require("fzf-lua").live_grep({ search = selected_text })
-  else
-    vim.notify("No grep picker available", vim.log.levels.ERROR)
-  end
+  grep_selected_text()
 end, { desc = "Grep Selected Text" })
 
 -- Grep keybinding for visual mode with G - search selected text at root level
 vim.keymap.set("v", "<leader>sG", function()
-  -- Get git root or fallback to cwd
   local git_root = vim.fn.system("git rev-parse --show-toplevel 2>/dev/null"):gsub("\n", "")
   local root = vim.v.shell_error == 0 and git_root ~= "" and git_root or vim.fn.getcwd()
-
-  -- Get the selected text
-  local start_pos = vim.fn.getpos("'<")
-  local end_pos = vim.fn.getpos("'>")
-  local lines = vim.fn.getline(start_pos[2], end_pos[2])
-
-  if #lines == 0 then
-    return
-  end
-
-  -- Handle single line selection
-  if #lines == 1 then
-    lines[1] = string.sub(lines[1], start_pos[3], end_pos[3])
-  else
-    -- Handle multi-line selection
-    lines[1] = string.sub(lines[1], start_pos[3])
-    lines[#lines] = string.sub(lines[#lines], 1, end_pos[3])
-  end
-
-  local selected_text = table.concat(lines, "\n")
-
-  -- Escape special characters for grep
-  selected_text = vim.fn.escape(selected_text, "\\.*[]^$()+?{}")
-
-  -- Use the selected text for grep at root level
-  if pcall(require, "snacks") then
-    require("snacks").picker.grep({ search = selected_text, cwd = root })
-  elseif pcall(require, "fzf-lua") then
-    require("fzf-lua").live_grep({ search = selected_text, cwd = root })
-  else
-    vim.notify("No grep picker available", vim.log.levels.ERROR)
-  end
+  grep_selected_text({ cwd = root })
 end, { desc = "Grep Selected Text (Root Dir)" })
 
 -- Delete all marks
@@ -142,27 +108,7 @@ vim.keymap.set("n", "<leader>md", function()
   vim.notify("All marks deleted")
 end, { desc = "Delete all marks" })
 
--- Custom save function
-function SaveFile()
-  -- Check if a buffer with a file is open
-  if vim.fn.empty(vim.fn.expand("%:t")) == 1 then
-    vim.notify("No file to save", vim.log.levels.WARN)
-    return
-  end
-
-  local filename = vim.fn.expand("%:t") -- Get only the filename
-  local success, err = pcall(function()
-    vim.cmd("silent! write") -- Try to save the file without showing the default message
-  end)
-
-  if success then
-    vim.notify(filename .. " Saved!") -- Show only the custom message if successful
-  else
-    vim.notify("Error: " .. err, vim.log.levels.ERROR) -- Show the error message if it fails
-  end
-end
-
--- Format on demand withShift+Option+F
+-- Format on demand with Shift+Option+F
 vim.keymap.set({ "n", "v" }, "<M-F>", function()
   require("conform").format({ async = true, lsp_format = "fallback" })
 end, { desc = "Format buffer" })

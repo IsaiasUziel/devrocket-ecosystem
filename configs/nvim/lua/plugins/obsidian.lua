@@ -3,12 +3,22 @@ return {
   version = "*", -- recommended, use latest release instead of latest commit
   lazy = false,
   enabled = function()
-    -- Disable Obsidian when running from Oil Simple (to avoid path issues in Zed context)
+    -- Allow disabling Obsidian from an external global flag when needed.
     return not vim.g.disable_obsidian
   end,
   dependencies = {
     -- Required.
     "nvim-lua/plenary.nvim",
+  },
+  keys = {
+    { "<leader>oc", "<cmd>Obsidian check<CR>", desc = "Obsidian check checkbox" },
+    { "<leader>ot", "<cmd>Obsidian template<CR>", desc = "Insert Obsidian template" },
+    { "<leader>oo", "<cmd>Obsidian open<CR>", desc = "Open in Obsidian app" },
+    { "<leader>ob", "<cmd>Obsidian backlinks<CR>", desc = "Show Obsidian backlinks" },
+    { "<leader>ol", "<cmd>Obsidian links<CR>", desc = "Show Obsidian links" },
+    { "<leader>on", "<cmd>Obsidian new<CR>", desc = "Create new note" },
+    { "<leader>os", "<cmd>Obsidian search<CR>", desc = "Search Obsidian" },
+    { "<leader>oq", "<cmd>Obsidian quick-switch<CR>", desc = "Quick switch" },
   },
   opts = {
     legacy_commands = false,

@@ -5,6 +5,7 @@ return {
   {
     "nvim-treesitter/nvim-treesitter",
     opts = function(_, opts)
+      -- 1. Asegurar que opts sea una tabla
       opts.ensure_installed = opts.ensure_installed or {}
 
       local languages = {
@@ -33,10 +34,30 @@ return {
         end
       end
 
-      opts.highlight = opts.highlight or { enable = true }
-      opts.indent = opts.indent or { enabled = true }
+      -- 2. Forzar el resaltado por defecto
+      opts.highlight = {
+        enable = true,
+        -- Mantener el resaltado legacy de Vim para PHP (útil en templates mixtos)
+        additional_vim_regex_highlighting = { "php" },
+      }
+
+      opts.incremental_selection = opts.incremental_selection
+        or {
+          enable = true,
+          keymaps = {
+            init_selection = "gnn",
+            node_incremental = "grn",
+            scope_incremental = "grc",
+            node_decremental = "grm",
+          },
+        }
 
       opts.ignore_install = vim.list_extend(opts.ignore_install or {}, { "phpdoc" })
+
+      opts.indent = opts.indent or { enable = true }
+
+      -- 3. ¡IMPORTANTE! Retornar la tabla modificada
+      return opts
     end,
   },
 
@@ -54,31 +75,29 @@ return {
   ------------------------------------------------------------------
   -- 🌈 RAINBOW (correcto)
   ------------------------------------------------------------------
-  {
-    "hiphish/rainbow-delimiters.nvim",
-    event = "VeryLazy",
-    config = function()
-      local rd = require("rainbow-delimiters")
-
-      vim.g.rainbow_delimiters = {
-        strategy = {
-          [""] = rd.strategy.global,
-          php = false, -- Disable rainbow-delimiters for PHP (WordPress templates)
-        },
-        query = {
-          [""] = "rainbow-delimiters",
-        },
-        highlight = {
-          "RainbowDelimiterRed",
-          "RainbowDelimiterYellow",
-          "RainbowDelimiterBlue",
-          "RainbowDelimiterOrange",
-          "RainbowDelimiterGreen",
-          "RainbowDelimiterViolet",
-          "RainbowDelimiterCyan",
-        },
-      }
-    end,
-  },
-
+  -- {
+  --   "hiphish/rainbow-delimiters.nvim",
+  --   event = "VeryLazy",
+  --   config = function()
+  --     local rd = require("rainbow-delimiters")
+  --
+  --     vim.g.rainbow_delimiters = {
+  --       strategy = {
+  --         [""] = rd.strategy.global,
+  --       },
+  --       query = {
+  --         [""] = "rainbow-delimiters",
+  --       },
+  --       highlight = {
+  --         "RainbowDelimiterRed",
+  --         "RainbowDelimiterYellow",
+  --         "RainbowDelimiterBlue",
+  --         "RainbowDelimiterOrange",
+  --         "RainbowDelimiterGreen",
+  --         "RainbowDelimiterViolet",
+  --         "RainbowDelimiterCyan",
+  --       },
+  --     }
+  --   end,
+  -- },
 }
