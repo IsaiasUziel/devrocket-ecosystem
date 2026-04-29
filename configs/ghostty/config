@@ -44,9 +44,10 @@ custom-shader = shaders/cursor_smear_gentleman.glsl
 
 # macOS only: keep native Option input enabled so Spanish characters and dead keys
 # continue to work (ñ, accents, symbols, etc.).
+macos-option-as-alt = false
 #
 # IMPORTANT:
-# - We intentionally DO NOT use `macos-option-as-alt`
+# - This must be explicit because Ghostty's empty default is keyboard-layout dependent
 # - Tmux window/scratch/cheatsheet actions live behind the tmux prefix (`C-a`)
 # - Pane navigation remains on Ctrl+h/j/k/l
 #
