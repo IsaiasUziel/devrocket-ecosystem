@@ -215,6 +215,9 @@ Managed targets in link mode:
 - `ghostty-assets` → `~/.config/ghostty/assets`
 - `ghostty-themes` → `~/.config/ghostty/themes`
 - `ghostty-shaders` → `~/.config/ghostty/shaders`
+- `zshrc` → `~/.zshrc`
+- `p10k` → `~/.p10k.zsh`
+- `cheatsheet` → preferred bin dir (`brew --prefix`/`bin` on Homebrew systems, otherwise `~/.local/bin/tmux-cheatsheet`)
 
 Use the scripts from the repo root:
 
@@ -239,7 +242,7 @@ Safety rules:
 - Unknown or foreign symlinks are refused instead of being overwritten.
 - `scripts/unlink-configs.sh` restores only targets recorded in the link-mode state file and refuses tampered targets or stale state.
 - If the scripts refuse because state or backups drifted, inspect `~/.local/state/devrocket-ecosystem/link-configs.json` and restore the recorded target manually before retrying.
-- This workflow never manages ~/.zshrc.local or any other private machine-specific overlay.
+- This workflow never manages `~/.zshrc.local` or any other private machine-specific overlay.
 
 ## ⌨️ Key Bindings
 

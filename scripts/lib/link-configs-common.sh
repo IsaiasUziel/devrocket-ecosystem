@@ -12,12 +12,12 @@ LINK_STATE_FILE="$LINK_STATE_ROOT/link-configs.json"
 LINK_BACKUP_ROOT="$LINK_STATE_ROOT/link-configs-backups"
 
 all_target_ids() {
-	printf '%s\n' nvim tmux ghostty-config ghostty-assets ghostty-themes ghostty-shaders
+	printf '%s\n' nvim tmux ghostty-config ghostty-assets ghostty-themes ghostty-shaders zshrc p10k cheatsheet
 }
 
 is_supported_target() {
 	case "$1" in
-		nvim|tmux|ghostty-config|ghostty-assets|ghostty-themes|ghostty-shaders) return 0 ;;
+		nvim|tmux|ghostty-config|ghostty-assets|ghostty-themes|ghostty-shaders|zshrc|p10k|cheatsheet) return 0 ;;
 		*) return 1 ;;
 	esac
 }
@@ -25,7 +25,7 @@ is_supported_target() {
 target_kind() {
 	case "$1" in
 		nvim|ghostty-assets|ghostty-themes|ghostty-shaders) printf 'dir\n' ;;
-		tmux|ghostty-config) printf 'file\n' ;;
+		tmux|ghostty-config|zshrc|p10k|cheatsheet) printf 'file\n' ;;
 		*) return 1 ;;
 	esac
 }
@@ -40,6 +40,9 @@ target_source() {
 		ghostty-assets) printf 'configs/ghostty/assets\n' ;;
 		ghostty-themes) printf 'configs/ghostty/themes\n' ;;
 		ghostty-shaders) printf 'configs/ghostty/shaders\n' ;;
+		zshrc) printf 'configs/zsh/zshrc\n' ;;
+		p10k) printf 'configs/zsh/p10k.zsh\n' ;;
+		cheatsheet) printf 'configs/cheatsheet/tmux-cheatsheet\n' ;;
 		*) return 1 ;;
 	esac
 }
@@ -52,12 +55,32 @@ target_path() {
 		ghostty-assets) printf '%s\n' "$HOME/.config/ghostty/assets" ;;
 		ghostty-themes) printf '%s\n' "$HOME/.config/ghostty/themes" ;;
 		ghostty-shaders) printf '%s\n' "$HOME/.config/ghostty/shaders" ;;
+		zshrc) printf '%s\n' "$HOME/.zshrc" ;;
+		p10k) printf '%s\n' "$HOME/.p10k.zsh" ;;
+		cheatsheet) printf '%s/tmux-cheatsheet\n' "$(link_bin_dir)" ;;
 		*) return 1 ;;
 	esac
 }
 
 target_expected_link() {
 	printf '%s/%s\n' "$LINK_CONFIGS_REPO_ROOT" "$(target_source "$1")"
+}
+
+link_bin_dir() {
+	if [ -n "${DEVROCKET_LINK_BIN_DIR:-}" ]; then
+		printf '%s\n' "$DEVROCKET_LINK_BIN_DIR"
+		return 0
+	fi
+
+	if command -v brew >/dev/null 2>&1; then
+		brew_prefix=$(brew --prefix 2>/dev/null || true)
+		if [ -n "$brew_prefix" ] && [ -d "$brew_prefix/bin" ]; then
+			printf '%s\n' "$brew_prefix/bin"
+			return 0
+		fi
+	fi
+
+	printf '%s\n' "$HOME/.local/bin"
 }
 
 log_info() {

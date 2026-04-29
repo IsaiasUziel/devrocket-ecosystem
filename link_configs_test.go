@@ -48,6 +48,9 @@ func TestLinkConfigsLinksAllSupportedTargetsAndWritesState(t *testing.T) {
 	assertSymlink(t, filepath.Join(homeDir, ".config", "ghostty", "assets"), filepath.Join(repoRoot, "configs", "ghostty", "assets"))
 	assertSymlink(t, filepath.Join(homeDir, ".config", "ghostty", "themes"), filepath.Join(repoRoot, "configs", "ghostty", "themes"))
 	assertSymlink(t, filepath.Join(homeDir, ".config", "ghostty", "shaders"), filepath.Join(repoRoot, "configs", "ghostty", "shaders"))
+	assertSymlink(t, filepath.Join(homeDir, ".zshrc"), filepath.Join(repoRoot, "configs", "zsh", "zshrc"))
+	assertSymlink(t, filepath.Join(homeDir, ".p10k.zsh"), filepath.Join(repoRoot, "configs", "zsh", "p10k.zsh"))
+	assertSymlink(t, filepath.Join(homeDir, ".local", "bin", "tmux-cheatsheet"), filepath.Join(repoRoot, "configs", "cheatsheet", "tmux-cheatsheet"))
 
 	state := readState(t, stateHome)
 	if state.Version != 1 {
@@ -59,8 +62,8 @@ func TestLinkConfigsLinksAllSupportedTargetsAndWritesState(t *testing.T) {
 	if state.LinkedAt == "" {
 		t.Fatal("expected linked_at to be populated")
 	}
-	if len(state.Targets) != 6 {
-		t.Fatalf("expected 6 targets in state, got %d", len(state.Targets))
+	if len(state.Targets) != 9 {
+		t.Fatalf("expected 9 targets in state, got %d", len(state.Targets))
 	}
 	if _, err := os.Stat(filepath.Join(homeDir, ".devrocket-manifest.json")); !os.IsNotExist(err) {
 		t.Fatalf("expected manifest to remain untouched, err=%v", err)
@@ -122,7 +125,7 @@ func TestLinkConfigsRefusesUnsupportedTargetsAndForeignSymlinks(t *testing.T) {
 	homeDir := t.TempDir()
 	stateHome := filepath.Join(t.TempDir(), "state-home")
 
-	unsupported := runScript(t, repoRoot, homeDir, stateHome, "link-configs.sh", "zsh")
+	unsupported := runScript(t, repoRoot, homeDir, stateHome, "link-configs.sh", "atuin")
 	if unsupported.err == nil {
 		t.Fatal("expected unsupported target to fail")
 	}
@@ -233,8 +236,11 @@ func TestReadmeDocumentsDeveloperLinkModeWorkflow(t *testing.T) {
 		"ghostty-assets",
 		"ghostty-themes",
 		"ghostty-shaders",
+		"zshrc",
+		"p10k",
+		"cheatsheet",
 		"The Go installer and dr-sys copy/install flow are unchanged",
-		"This workflow never manages ~/.zshrc.local",
+		"This workflow never manages `~/.zshrc.local`",
 	} {
 		if !strings.Contains(content, expected) {
 			t.Fatalf("expected README to contain %q", expected)
@@ -255,6 +261,7 @@ func runScript(t *testing.T, repoRoot, homeDir, stateHome, script string, args .
 	cmd.Env = append(os.Environ(),
 		"HOME="+homeDir,
 		"XDG_STATE_HOME="+stateHome,
+		"DEVROCKET_LINK_BIN_DIR="+filepath.Join(homeDir, ".local", "bin"),
 	)
 	cmd.Dir = repoRoot
 	out, err := cmd.Output()

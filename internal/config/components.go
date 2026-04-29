@@ -21,7 +21,8 @@ type Target struct {
 
 // AllComponents returns the supported installable components.
 // Destination paths are resolved at call time using the current user environment.
-// The developer-only link workflow mirrors only the Neovim, Tmux, and Ghostty targets below.
+// The developer-only link workflow mirrors the baseline local config targets below,
+// excluding Atuin because its generated config is intentionally machine-owned.
 func AllComponents() []Component {
 	home := HomeDir()
 	configDir := ConfigDir()

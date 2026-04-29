@@ -156,3 +156,6 @@ start_if_needed
 # Source local config for machine-specific aliases, credentials, etc.
 # This file is gitignored and never committed.
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
+
+# Bun completions
+[[ -s "$HOME/.bun/_bun" ]] && source "$HOME/.bun/_bun"

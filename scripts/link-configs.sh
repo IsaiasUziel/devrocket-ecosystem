@@ -34,12 +34,15 @@ EOF
 	fi
 
 	if [ -L "$target_path" ]; then
-		if [ -z "$record" ]; then
-			fail "foreign symlink detected for $target_id: $target_path -> $(readlink_target "$target_path")"
-		fi
 		current_link=$(readlink_target "$target_path")
 		if [ "$current_link" != "$expected_link" ]; then
 			fail "foreign symlink detected for $target_id: $target_path -> $current_link"
+		fi
+		if [ -z "$backup_path" ] && [ -n "$backup_dir" ] && [ -e "$backup_dir/$target_id" ]; then
+			backup_path="$backup_dir/$target_id"
+		fi
+		if [ -z "$record" ]; then
+			log_warn "adopting existing expected symlink for $target_id: $target_path"
 		fi
 		prepared_records=$(append_record "$prepared_records" "${target_id}|$(target_kind "$target_id")|$(target_source "$target_id")|$target_path|$expected_link|$backup_path")
 		skipped_count=$((skipped_count + 1))
