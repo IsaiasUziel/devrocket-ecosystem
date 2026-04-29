@@ -28,3 +28,6 @@ bin/
 dist/
 *.exe
 coverage.out
+
+# SDD registry
+.atl/

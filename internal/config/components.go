@@ -21,6 +21,7 @@ type Target struct {
 
 // AllComponents returns the supported installable components.
 // Destination paths are resolved at call time using the current user environment.
+// The developer-only link workflow mirrors only the Neovim, Tmux, and Ghostty targets below.
 func AllComponents() []Component {
 	home := HomeDir()
 	configDir := ConfigDir()
@@ -35,6 +36,7 @@ func AllComponents() []Component {
 			DetectApp:   "/Applications/Ghostty.app",
 			Targets: []Target{
 				{Source: "config", Dest: filepath.Join(configDir, "ghostty", "config")},
+				{Source: "assets", Dest: filepath.Join(configDir, "ghostty", "assets"), IsDir: true},
 				{Source: "themes", Dest: filepath.Join(configDir, "ghostty", "themes"), IsDir: true},
 				{Source: "shaders", Dest: filepath.Join(configDir, "ghostty", "shaders"), IsDir: true},
 			},

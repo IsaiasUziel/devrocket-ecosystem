@@ -201,6 +201,46 @@ The TUI installer copies configs from the embedded binary (no internet required 
 
 Each component can be individually selected or deselected in the TUI before installing.
 
+## 🔗 Developer Link Mode
+
+For local development on this repo, you can link the repo-managed configs directly into your home directory instead of copying them through `dr-sys`.
+
+**This workflow is developer-only. The Go installer and dr-sys copy/install flow are unchanged for end users.**
+
+Managed targets in link mode:
+
+- `nvim` → `~/.config/nvim`
+- `tmux` → `~/.tmux.conf`
+- `ghostty-config` → `~/.config/ghostty/config`
+- `ghostty-assets` → `~/.config/ghostty/assets`
+- `ghostty-themes` → `~/.config/ghostty/themes`
+- `ghostty-shaders` → `~/.config/ghostty/shaders`
+
+Use the scripts from the repo root:
+
+```bash
+scripts/link-configs.sh
+scripts/unlink-configs.sh
+```
+
+Optional target scoping is supported for the managed IDs above:
+
+```bash
+scripts/link-configs.sh tmux ghostty-config
+scripts/unlink-configs.sh tmux ghostty-config
+```
+
+State is stored independently from the installer at `~/.local/state/devrocket-ecosystem/link-configs.json` with backups under `~/.local/state/devrocket-ecosystem/link-configs-backups/`.
+
+Safety rules:
+
+- Existing regular files or directories are moved into the link-mode backup directory before a symlink is created.
+- Re-running `scripts/link-configs.sh` is idempotent for already-managed targets and can recreate a missing managed symlink.
+- Unknown or foreign symlinks are refused instead of being overwritten.
+- `scripts/unlink-configs.sh` restores only targets recorded in the link-mode state file and refuses tampered targets or stale state.
+- If the scripts refuse because state or backups drifted, inspect `~/.local/state/devrocket-ecosystem/link-configs.json` and restore the recorded target manually before retrying.
+- This workflow never manages ~/.zshrc.local or any other private machine-specific overlay.
+
 ## ⌨️ Key Bindings
 
 ### Tmux (prefix: `C-a`)

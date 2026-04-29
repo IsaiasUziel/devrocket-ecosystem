@@ -16,10 +16,10 @@ font-style = semibold
 # │                                  WINDOW                                      │
 # └──────────────────────────────────────────────────────────────────────────────┘
 
-background-opacity = 0.95
+background-opacity = 0.975
 background-blur-radius = 20
-# background-image = /path/to/your/image.png
-background-image-opacity = 0.1
+background-image = ~/.config/ghostty/assets/pngegg.png
+background-image-opacity = 0.05
 
 window-decoration = true
 window-padding-color = extend
