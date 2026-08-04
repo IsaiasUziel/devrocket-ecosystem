@@ -6,12 +6,18 @@ LINK_CONFIGS_SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 LINK_CONFIGS_REPO_ROOT=$(CDPATH= cd -- "$LINK_CONFIGS_SCRIPT_DIR/.." && pwd)
 . "$LINK_CONFIGS_SCRIPT_DIR/lib/link-configs-common.sh"
 
-TARGET_IDS=$(selected_targets "$@")
 load_state_if_present
 
 if [ "$STATE_PRESENT" -ne 1 ]; then
 	fail "missing state file: $LINK_STATE_FILE"
 fi
+
+if [ "$#" -eq 0 ]; then
+	TARGET_IDS=$(record_ids "$STATE_RECORDS")
+else
+	TARGET_IDS=$(selected_targets "$@")
+fi
+preflight_unlink_targets "$TARGET_IDS"
 
 restored_count=0
 skipped_count=0
@@ -39,14 +45,6 @@ for target_id in $(all_target_ids); do
 	IFS='|' read -r rid _ _ target_path expected_link backup_path <<EOF
 $record
 EOF
-	if [ ! -L "$target_path" ]; then
-		fail "unexpected target state for $rid: $target_path"
-	fi
-	current_link=$(readlink_target "$target_path")
-	if [ "$current_link" != "$expected_link" ]; then
-		fail "unexpected target state for $rid: $target_path -> $current_link"
-	fi
-
 	rm "$target_path"
 	if [ -n "$backup_path" ]; then
 		ensure_parent_dir "$target_path"
@@ -56,12 +54,6 @@ EOF
 		skipped_count=$((skipped_count + 1))
 	fi
 	remove_empty_parents "$target_path"
-done
-
-for requested_id in $TARGET_IDS; do
-	if [ -z "$(record_for_id "$requested_id" "$STATE_RECORDS")" ]; then
-		fail "target is not managed in state: $requested_id"
-	fi
 done
 
 if [ -n "$remaining_records" ]; then

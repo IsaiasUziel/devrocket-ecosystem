@@ -20,6 +20,7 @@ type InstallResult struct {
 	Files     []string
 	Skipped   bool
 	Notes     []string
+	Backups   map[string]string
 }
 
 // InstallComponent extracts embedded files for a component into their target locations.
@@ -32,9 +33,16 @@ func InstallComponent(comp config.Component, embedFS fs.FS, backup bool) Install
 		srcPath := filepath.Join(comp.EmbedDir, target.Source)
 
 		if backup {
-			if _, err := CreateBackup(target.Dest); err != nil {
+			backupPath, err := CreateBackup(target.Dest)
+			if err != nil {
 				result.Error = fmt.Errorf("backup failed for %s: %w", target.Dest, err)
 				return result
+			}
+			if backupPath != "" {
+				if result.Backups == nil {
+					result.Backups = make(map[string]string)
+				}
+				result.Backups[target.Dest] = backupPath
 			}
 		}
 
@@ -43,17 +51,17 @@ func InstallComponent(comp config.Component, embedFS fs.FS, backup bool) Install
 
 		if target.IsDir {
 			files, err := extractDir(embedFS, srcPath, target.Dest)
+			result.Files = append(result.Files, files...)
 			if err != nil {
 				result.Error = fmt.Errorf("failed to extract %s: %w", srcPath, err)
 				return result
 			}
-			result.Files = append(result.Files, files...)
 		} else {
+			result.Files = append(result.Files, target.Dest)
 			if err := extractFile(embedFS, srcPath, target.Dest); err != nil {
 				result.Error = fmt.Errorf("failed to extract %s: %w", srcPath, err)
 				return result
 			}
-			result.Files = append(result.Files, target.Dest)
 		}
 	}
 
@@ -106,15 +114,16 @@ func BuildManifest(version string, results []InstallResult, backupEnabled bool) 
 		Timestamp: time.Now(),
 	}
 
-	if backupEnabled {
-		timestamp := time.Now().Format("2006-01-02_150405")
-		m.BackupDir = filepath.Join(config.BackupDir(), timestamp)
-	}
-
 	for _, r := range results {
+		m.Files = append(m.Files, r.Files...)
+		for dest, backupPath := range r.Backups {
+			if m.Backups == nil {
+				m.Backups = make(map[string]string)
+			}
+			m.Backups[dest] = backupPath
+		}
 		if r.Success {
 			m.Components = append(m.Components, r.Component)
-			m.Files = append(m.Files, r.Files...)
 		}
 	}
 
@@ -158,10 +167,10 @@ func extractDir(fsys fs.FS, srcDir, dstDir string) ([]string, error) {
 			return os.MkdirAll(targetPath, 0755)
 		}
 
+		files = append(files, targetPath)
 		if err := extractFile(fsys, path, targetPath); err != nil {
 			return err
 		}
-		files = append(files, targetPath)
 		return nil
 	})
 

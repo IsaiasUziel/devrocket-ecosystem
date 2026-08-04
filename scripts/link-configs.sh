@@ -6,10 +6,11 @@ LINK_CONFIGS_SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 LINK_CONFIGS_REPO_ROOT=$(CDPATH= cd -- "$LINK_CONFIGS_SCRIPT_DIR/.." && pwd)
 . "$LINK_CONFIGS_SCRIPT_DIR/lib/link-configs-common.sh"
 
-ensure_state_root
 TARGET_IDS=$(selected_targets "$@")
 require_repo_sources $TARGET_IDS
 load_state_if_present
+preflight_link_targets "$TARGET_IDS"
+ensure_state_root
 
 backup_dir=${STATE_BACKUP_DIR:-}
 linked_at=${STATE_LINKED_AT:-}

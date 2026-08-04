@@ -12,12 +12,12 @@ LINK_STATE_FILE="$LINK_STATE_ROOT/link-configs.json"
 LINK_BACKUP_ROOT="$LINK_STATE_ROOT/link-configs-backups"
 
 all_target_ids() {
-	printf '%s\n' nvim tmux ghostty-config ghostty-assets ghostty-themes ghostty-shaders zshrc p10k cheatsheet
+	printf '%s\n' nvim tmux herdr ghostty-config ghostty-assets ghostty-themes ghostty-shaders zshrc p10k cheatsheet
 }
 
 is_supported_target() {
 	case "$1" in
-		nvim|tmux|ghostty-config|ghostty-assets|ghostty-themes|ghostty-shaders|zshrc|p10k|cheatsheet) return 0 ;;
+		nvim|tmux|herdr|ghostty-config|ghostty-assets|ghostty-themes|ghostty-shaders|zshrc|p10k|cheatsheet) return 0 ;;
 		*) return 1 ;;
 	esac
 }
@@ -25,7 +25,7 @@ is_supported_target() {
 target_kind() {
 	case "$1" in
 		nvim|ghostty-assets|ghostty-themes|ghostty-shaders) printf 'dir\n' ;;
-		tmux|ghostty-config|zshrc|p10k|cheatsheet) printf 'file\n' ;;
+		tmux|herdr|ghostty-config|zshrc|p10k|cheatsheet) printf 'file\n' ;;
 		*) return 1 ;;
 	esac
 }
@@ -36,6 +36,7 @@ target_source() {
 	case "$1" in
 		nvim) printf 'configs/nvim\n' ;;
 		tmux) printf 'configs/tmux/tmux.conf\n' ;;
+		herdr) printf 'configs/herdr/config.toml\n' ;;
 		ghostty-config) printf 'configs/ghostty/config\n' ;;
 		ghostty-assets) printf 'configs/ghostty/assets\n' ;;
 		ghostty-themes) printf 'configs/ghostty/themes\n' ;;
@@ -51,6 +52,7 @@ target_path() {
 	case "$1" in
 		nvim) printf '%s\n' "$HOME/.config/nvim" ;;
 		tmux) printf '%s\n' "$HOME/.tmux.conf" ;;
+		herdr) printf '%s\n' "$HOME/.config/herdr/config.toml" ;;
 		ghostty-config) printf '%s\n' "$HOME/.config/ghostty/config" ;;
 		ghostty-assets) printf '%s\n' "$HOME/.config/ghostty/assets" ;;
 		ghostty-themes) printf '%s\n' "$HOME/.config/ghostty/themes" ;;
@@ -195,6 +197,61 @@ ensure_parent_dir() {
 	if ! mkdir -p "$parent_dir"; then
 		fail "failed to create parent directory: $parent_dir"
 	fi
+}
+
+require_creatable_parent() {
+	path=$(dirname "$1")
+	while [ ! -e "$path" ] && [ ! -L "$path" ]; do
+		path=$(dirname "$path")
+	done
+	if [ ! -d "$path" ]; then
+		fail "parent path is not a directory: $path"
+	fi
+}
+
+preflight_link_targets() {
+	for target_id in $1; do
+		target_path=$(target_path "$target_id")
+		expected_link=$(target_expected_link "$target_id")
+		record=$(record_for_id "$target_id" "$STATE_RECORDS")
+		require_creatable_parent "$target_path"
+
+		if [ -L "$target_path" ]; then
+			current_link=$(readlink_target "$target_path")
+			if [ "$current_link" != "$expected_link" ]; then
+				fail "foreign symlink detected for $target_id: $target_path -> $current_link"
+			fi
+		elif [ -e "$target_path" ] && [ -n "$record" ]; then
+			fail "unexpected target state for $target_id: $target_path"
+		fi
+	done
+}
+
+preflight_unlink_targets() {
+	for target_id in $1; do
+		record=$(record_for_id "$target_id" "$STATE_RECORDS")
+		if [ -z "$record" ]; then
+			fail "target is not managed in state: $target_id"
+		fi
+		IFS='|' read -r rid _ _ target_path expected_link _ <<EOF
+$record
+EOF
+		if [ ! -L "$target_path" ]; then
+			fail "unexpected target state for $rid: $target_path"
+		fi
+		current_link=$(readlink_target "$target_path")
+		if [ "$current_link" != "$expected_link" ]; then
+			fail "unexpected target state for $rid: $target_path -> $current_link"
+		fi
+	done
+}
+
+record_ids() {
+	records=${1-}
+	[ -n "$records" ] || return 0
+	printf '%s\n' "$records" | while IFS='|' read -r rid _; do
+		[ -z "$rid" ] || printf '%s\n' "$rid"
+	done
 }
 
 ensure_backup_dir() {

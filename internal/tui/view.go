@@ -45,7 +45,7 @@ func (m Model) viewWelcome() string {
 	b.WriteString(dimStyle.Render(fmt.Sprintf("  v%s", m.version)))
 	b.WriteString("\n\n")
 	b.WriteString("  An opinionated, batteries-included terminal dev environment.\n")
-	b.WriteString(dimStyle.Render("  Ghostty + Tmux + Neovim/LazyVim + Zsh\n"))
+	b.WriteString(dimStyle.Render("  Ghostty + Tmux/Herdr + Neovim/LazyVim + Zsh\n"))
 	b.WriteString("\n\n")
 
 	options := []string{"Install", "Uninstall", "Quit"}

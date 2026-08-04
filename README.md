@@ -1,7 +1,7 @@
 # 🚀 DevRocket Ecosystem
 
 > An opinionated, batteries-included terminal development environment.  
-> Ghostty + Tmux + Neovim (LazyVim) + Zsh — configured to work together seamlessly.
+> Ghostty + Tmux/Herdr + Neovim (LazyVim) + Zsh — configured to work together seamlessly.
 
 ![DevRocket Ecosystem Installer](./screenshots/step-1.png)
 
@@ -27,6 +27,7 @@
 | -------------- | -------------------- | --------------------------------------------------------------- |
 | **Ghostty**    | Terminal emulator    | Kanagawa theme, custom shaders, optimized keybindings           |
 | **Tmux**       | Terminal multiplexer | Prefix `C-a`, seamless navigation with Neovim, popup cheatsheet |
+| **Herdr**      | Terminal multiplexer | Rose Pine profile, system toasts, hidden pane labels            |
 | **Neovim**     | Editor (LazyVim)     | 29+ plugins, Harpoon2, Oil.nvim, Flash.nvim, LSP                |
 | **Zsh**        | Shell                | Powerlevel10k, autocomplete, syntax highlighting, zoxide         |
 | **Atuin**      | Shell history        | Search, sync v2 baseline, shell workflow recall                  |
@@ -79,6 +80,7 @@ gentleman-dots
 | ----------------------------------------------- | ------------------------------ | ----------------------------------------------------------------- |
 | [Ghostty](https://ghostty.org)                  | Download from website          | Download from website or install with your distro package manager |
 | [Tmux](https://github.com/tmux/tmux)            | `brew install tmux`            | Install with your distro package manager                          |
+| [Herdr](https://github.com/herdrdev/herdr)       | `brew install herdr`           | Install its binary separately                                     |
 | [Neovim](https://neovim.io)                     | `brew install neovim`          | Install with your distro package manager                          |
 | [fzf](https://github.com/junegunn/fzf)          | `brew install fzf`             | Install with your distro package manager                          |
 | [Zsh](https://www.zsh.org)                      | Usually pre-installed on macOS | Usually available via your distro package manager                 |
@@ -170,7 +172,7 @@ The TUI installer will:
 ## 🧭 Installation Flow
 
 1. **Launch the TUI** — choose `Install`, `Uninstall`, or `Quit`
-2. **Select components** — Ghostty, Tmux, Neovim, Zsh, Atuin, Cheatsheet
+2. **Select components** — the list is generated from available DevRocket components, including Herdr
 3. **Run pre-flight checks** - tool detection, OS info, install prefix, backup status
 4. **Install with feedback** — per-component progress and success/warn/error summary
 
@@ -194,6 +196,7 @@ The TUI installer copies configs from the embedded binary (no internet required 
 | -------------- | --------------------------------------------------------------- |
 | **Ghostty**    | `~/.config/ghostty/`                                            |
 | **Tmux**       | `~/.tmux.conf`                                                  |
+| **Herdr**      | `~/.config/herdr/config.toml`                                   |
 | **Neovim**     | `~/.config/nvim/`                                               |
 | **Zsh**        | `~/.zshrc`, `~/.p10k.zsh`                                       |
 | **Atuin**      | `~/.config/atuin/config.toml`                                   |
@@ -211,6 +214,7 @@ Managed targets in link mode:
 
 - `nvim` → `~/.config/nvim`
 - `tmux` → `~/.tmux.conf`
+- `herdr` → `~/.config/herdr/config.toml`
 - `ghostty-config` → `~/.config/ghostty/config`
 - `ghostty-assets` → `~/.config/ghostty/assets`
 - `ghostty-themes` → `~/.config/ghostty/themes`
@@ -229,8 +233,8 @@ scripts/unlink-configs.sh
 Optional target scoping is supported for the managed IDs above:
 
 ```bash
-scripts/link-configs.sh tmux ghostty-config
-scripts/unlink-configs.sh tmux ghostty-config
+scripts/link-configs.sh tmux herdr ghostty-config
+scripts/unlink-configs.sh tmux herdr ghostty-config
 ```
 
 State is stored independently from the installer at `~/.local/state/devrocket-ecosystem/link-configs.json` with backups under `~/.local/state/devrocket-ecosystem/link-configs-backups/`.
@@ -243,6 +247,10 @@ Safety rules:
 - `scripts/unlink-configs.sh` restores only targets recorded in the link-mode state file and refuses tampered targets or stale state.
 - If the scripts refuse because state or backups drifted, inspect `~/.local/state/devrocket-ecosystem/link-configs.json` and restore the recorded target manually before retrying.
 - This workflow never manages `~/.zshrc.local` or any other private machine-specific overlay.
+
+## Multiplexer Selector
+
+DevRocket manages Herdr's config but never installs its binary. New interactive shells default to tmux; use `set_herdr`, `set_tmux`, and `current_mux` to persist the choice in `${XDG_CONFIG_HOME:-$HOME/.config}/devrocket/mux`. Missing commands are skipped without replacing the shell.
 
 ## ⌨️ Key Bindings
 

@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/IsaiasUziel/devrocket-ecosystem/internal/config"
@@ -29,7 +30,8 @@ func CreateBackup(target string) (string, error) {
 		return "", fmt.Errorf("failed to create backup dir: %w", err)
 	}
 
-	backupPath := filepath.Join(backupBase, filepath.Base(target))
+	cleanTarget := filepath.Clean(target)
+	backupPath := filepath.Join(backupBase, strings.TrimPrefix(cleanTarget, string(filepath.Separator)))
 
 	if info.IsDir() {
 		if err := copyDir(target, backupPath); err != nil {

@@ -10,11 +10,12 @@ import (
 
 // Manifest tracks the installation state for clean uninstall.
 type Manifest struct {
-	Version    string    `json:"version"`
-	Timestamp  time.Time `json:"timestamp"`
-	Components []string  `json:"components"`
-	Files      []string  `json:"files"`
-	BackupDir  string    `json:"backup_dir,omitempty"`
+	Version    string            `json:"version"`
+	Timestamp  time.Time         `json:"timestamp"`
+	Components []string          `json:"components"`
+	Files      []string          `json:"files"`
+	BackupDir  string            `json:"backup_dir,omitempty"`
+	Backups    map[string]string `json:"backups,omitempty"`
 }
 
 // WriteManifest serialises and saves the installation manifest.

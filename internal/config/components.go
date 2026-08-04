@@ -52,6 +52,15 @@ func AllComponents() []Component {
 			},
 		},
 		{
+			Name:        "Herdr",
+			Description: "Multiplexer config with Rose Pine theme + system toasts",
+			EmbedDir:    "configs/herdr",
+			DetectCmd:   "herdr",
+			Targets: []Target{
+				{Source: "config.toml", Dest: filepath.Join(configDir, "herdr", "config.toml")},
+			},
+		},
+		{
 			Name:        "Neovim",
 			Description: "LazyVim with 29+ plugins, Harpoon, Oil, Flash",
 			EmbedDir:    "configs/nvim",

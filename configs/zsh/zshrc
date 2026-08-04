@@ -88,19 +88,111 @@ export FZF_DEFAULT_COMMAND="fd --hidden --strip-cwd-prefix --exclude .git"
 export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
 export FZF_ALT_C_COMMAND="fd --type=d --hidden --strip-cwd-prefix --exclude .git"
 
-WM_VAR="/$TMUX"
-# change with ZELLIJ
-WM_CMD="tmux"
-# change with zellij
+MUX_SELECTOR_STATE_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/devrocket/mux"
+MUX_SELECTOR_LEGACY_STATE_FILE="$HOME/.config/herdr/mux-selector"
+
+_mux_selector_process_tree_has_command() {
+  local needle="$1"
+  local pid="$PPID"
+  local proc_name
+
+  while [[ "$pid" == <-> ]] && (( pid > 1 )); do
+    proc_name="$(ps -o comm= -p "$pid" 2>/dev/null | tr -d '[:space:]')"
+    [[ -n "$proc_name" ]] || break
+    [[ "${proc_name:t}" == "$needle" ]] && return 0
+    pid="$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d '[:space:]')"
+  done
+  return 1
+}
+
+_mux_selector_read_file() {
+  local state_file="$1"
+  local mux
+  [[ -f "$state_file" ]] || return 1
+  IFS= read -r mux < "$state_file"
+  case "$mux" in
+    herdr|tmux) printf '%s\n' "$mux" ;;
+    *) return 1 ;;
+  esac
+}
+
+_mux_selector_read() {
+  local mux
+  if mux="$(_mux_selector_read_file "$MUX_SELECTOR_STATE_FILE")"; then
+    printf '%s\n' "$mux"
+    return 0
+  fi
+
+  if [[ ! -e "$MUX_SELECTOR_STATE_FILE" ]] && mux="$(_mux_selector_read_file "$MUX_SELECTOR_LEGACY_STATE_FILE")"; then
+    _mux_selector_write_file "$mux" || return 1
+    printf '%s\n' "$mux"
+    return 0
+  fi
+
+  printf 'tmux\n'
+}
+
+_mux_selector_sync_runtime() {
+  WM_CMD="${1:-$(_mux_selector_read)}"
+}
+
+_mux_selector_write_file() {
+  local mux="$1"
+  local state_dir="${MUX_SELECTOR_STATE_FILE:h}"
+  local tmp_file
+
+  mkdir -p "$state_dir" || return 1
+  tmp_file="$(mktemp "$state_dir/.mux.XXXXXX")" || return 1
+  if ! printf '%s\n' "$mux" > "$tmp_file" || ! mv -f "$tmp_file" "$MUX_SELECTOR_STATE_FILE"; then
+    rm -f "$tmp_file"
+    return 1
+  fi
+}
+
+_mux_selector_write() {
+  local mux="$1"
+  case "$mux" in
+    herdr|tmux) ;;
+    *)
+      printf 'Invalid multiplexer: %s\n' "$mux" >&2
+      return 1
+      ;;
+  esac
+
+  _mux_selector_write_file "$mux" || return 1
+  _mux_selector_sync_runtime "$mux"
+}
+
+set_tmux() {
+  _mux_selector_write tmux || return 1
+  printf 'Multiplexer set to tmux for new shells and windows.\n'
+}
+
+set_herdr() {
+  _mux_selector_write herdr || return 1
+  printf 'Multiplexer set to herdr for new shells and windows.\n'
+}
+
+current_mux() {
+  printf 'Current multiplexer: %s\n' "$(_mux_selector_read)"
+}
+
+wm_can_start() {
+  [[ -z "${TMUX:-}" ]] || return 1
+  [[ -z "${ZELLIJ:-}" ]] || return 1
+  _mux_selector_process_tree_has_command herdr && return 1
+  return 0
+}
 
 function start_if_needed() {
-    if [[ $- == *i* ]] && [[ -z "${WM_VAR#/}" ]] && [[ -t 1 ]]; then
+    if [[ $- == *i* ]] && command -v "$WM_CMD" >/dev/null 2>&1 && wm_can_start && [[ -t ${__p9k_fd_0:-0} ]]; then
        #exec $WM_CMD new-session -A -s "$(basename $(tty))"
         # exec $WM_CMD new-session -A -s "sdg-$(printf '%x' $(date +%s))"
-         exec $WM_CMD
+          exec "$WM_CMD" <&${__p9k_fd_0:-0} >&${__p9k_fd_1:-1} 2>&${__p9k_fd_2:-2}
     fi
 }
 
+_mux_selector_sync_runtime
 
 #plugins
 plugins=(
@@ -150,12 +242,12 @@ fi
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
-start_if_needed
-
 # ─── Private/Local Overrides ───────────────────────────────────────────────────
 # Source local config for machine-specific aliases, credentials, etc.
 # This file is gitignored and never committed.
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
+
+start_if_needed
 
 # Bun completions
 [[ -s "$HOME/.bun/_bun" ]] && source "$HOME/.bun/_bun"

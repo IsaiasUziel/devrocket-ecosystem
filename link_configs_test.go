@@ -34,6 +34,7 @@ func TestLinkConfigsLinksAllSupportedTargetsAndWritesState(t *testing.T) {
 	mustMkdirAll(t, filepath.Join(homeDir, ".config", "ghostty"))
 	mustMkdirAll(t, filepath.Join(homeDir, ".config", "nvim"))
 	mustWriteFile(t, filepath.Join(homeDir, ".tmux.conf"), "set -g mouse off\n")
+	mustWriteFile(t, filepath.Join(homeDir, ".config", "herdr", "config.toml"), "onboarding = true\n")
 	mustWriteFile(t, filepath.Join(homeDir, ".config", "ghostty", "config"), "theme = old\n")
 	mustWriteFile(t, filepath.Join(homeDir, ".config", "nvim", "init.lua"), "print('legacy')\n")
 
@@ -44,6 +45,7 @@ func TestLinkConfigsLinksAllSupportedTargetsAndWritesState(t *testing.T) {
 
 	assertSymlink(t, filepath.Join(homeDir, ".config", "nvim"), filepath.Join(repoRoot, "configs", "nvim"))
 	assertSymlink(t, filepath.Join(homeDir, ".tmux.conf"), filepath.Join(repoRoot, "configs", "tmux", "tmux.conf"))
+	assertSymlink(t, filepath.Join(homeDir, ".config", "herdr", "config.toml"), filepath.Join(repoRoot, "configs", "herdr", "config.toml"))
 	assertSymlink(t, filepath.Join(homeDir, ".config", "ghostty", "config"), filepath.Join(repoRoot, "configs", "ghostty", "config"))
 	assertSymlink(t, filepath.Join(homeDir, ".config", "ghostty", "assets"), filepath.Join(repoRoot, "configs", "ghostty", "assets"))
 	assertSymlink(t, filepath.Join(homeDir, ".config", "ghostty", "themes"), filepath.Join(repoRoot, "configs", "ghostty", "themes"))
@@ -62,8 +64,8 @@ func TestLinkConfigsLinksAllSupportedTargetsAndWritesState(t *testing.T) {
 	if state.LinkedAt == "" {
 		t.Fatal("expected linked_at to be populated")
 	}
-	if len(state.Targets) != 9 {
-		t.Fatalf("expected 9 targets in state, got %d", len(state.Targets))
+	if len(state.Targets) != 10 {
+		t.Fatalf("expected 10 targets in state, got %d", len(state.Targets))
 	}
 	if _, err := os.Stat(filepath.Join(homeDir, ".devrocket-manifest.json")); !os.IsNotExist(err) {
 		t.Fatalf("expected manifest to remain untouched, err=%v", err)
@@ -77,6 +79,7 @@ func TestLinkConfigsLinksAllSupportedTargetsAndWritesState(t *testing.T) {
 		t.Fatal("expected tmux target backup to be recorded")
 	}
 	assertFileContains(t, tmuxState.Backup, "set -g mouse off")
+	assertFileContains(t, stateTargetByID(t, state, "herdr").Backup, "onboarding = true")
 	nvimState := stateTargetByID(t, state, "nvim")
 	if nvimState.Backup == "" {
 		t.Fatal("expected nvim target backup to be recorded")
@@ -133,13 +136,13 @@ func TestLinkConfigsRefusesUnsupportedTargetsAndForeignSymlinks(t *testing.T) {
 		t.Fatalf("expected unsupported target error, got stderr=%q", unsupported.stderr)
 	}
 
-	mustMkdirAll(t, filepath.Join(homeDir, ".config"))
-	foreignTarget := filepath.Join(homeDir, ".tmux.conf")
+	mustMkdirAll(t, filepath.Join(homeDir, ".config", "herdr"))
+	foreignTarget := filepath.Join(homeDir, ".config", "herdr", "config.toml")
 	if err := os.Symlink(filepath.Join(homeDir, "elsewhere.conf"), foreignTarget); err != nil {
 		t.Fatalf("create foreign symlink: %v", err)
 	}
 
-	foreign := runScript(t, repoRoot, homeDir, stateHome, "link-configs.sh", "tmux")
+	foreign := runScript(t, repoRoot, homeDir, stateHome, "link-configs.sh", "herdr")
 	if foreign.err == nil {
 		t.Fatal("expected foreign symlink to fail")
 	}
@@ -149,12 +152,34 @@ func TestLinkConfigsRefusesUnsupportedTargetsAndForeignSymlinks(t *testing.T) {
 	assertSymlink(t, foreignTarget, filepath.Join(homeDir, "elsewhere.conf"))
 }
 
+func TestLinkConfigsPreflightsAllTargetsBeforeMutation(t *testing.T) {
+	repoRoot := repoRoot(t)
+	homeDir := t.TempDir()
+	stateHome := filepath.Join(t.TempDir(), "state-home")
+	tmuxPath := filepath.Join(homeDir, ".tmux.conf")
+	mustWriteFile(t, tmuxPath, "keep me\n")
+	mustWriteFile(t, filepath.Join(homeDir, ".config", "herdr"), "parent obstruction\n")
+
+	result := runScript(t, repoRoot, homeDir, stateHome, "link-configs.sh")
+	if result.err == nil {
+		t.Fatal("expected parent obstruction to fail")
+	}
+	assertFileContains(t, tmuxPath, "keep me")
+	if _, err := os.Lstat(filepath.Join(homeDir, ".config", "nvim")); !os.IsNotExist(err) {
+		t.Fatalf("expected earlier target to remain absent, err=%v", err)
+	}
+	if _, err := os.Stat(filepath.Join(stateHome, "devrocket-ecosystem", "link-configs.json")); !os.IsNotExist(err) {
+		t.Fatalf("expected no state mutation, err=%v", err)
+	}
+}
+
 func TestUnlinkConfigsRestoresBackupsAndRemovesState(t *testing.T) {
 	repoRoot := repoRoot(t)
 	homeDir := t.TempDir()
 	stateHome := filepath.Join(t.TempDir(), "state-home")
 
 	mustWriteFile(t, filepath.Join(homeDir, ".tmux.conf"), "set -g status off\n")
+	mustWriteFile(t, filepath.Join(homeDir, ".config", "herdr", "config.toml"), "onboarding = true\n")
 	mustMkdirAll(t, filepath.Join(homeDir, ".config", "nvim"))
 	mustWriteFile(t, filepath.Join(homeDir, ".config", "nvim", "init.lua"), "print('before')\n")
 
@@ -169,6 +194,7 @@ func TestUnlinkConfigsRestoresBackupsAndRemovesState(t *testing.T) {
 	}
 
 	assertFileContains(t, filepath.Join(homeDir, ".tmux.conf"), "set -g status off")
+	assertFileContains(t, filepath.Join(homeDir, ".config", "herdr", "config.toml"), "onboarding = true")
 	assertFileContains(t, filepath.Join(homeDir, ".config", "nvim", "init.lua"), "before")
 	statePath := filepath.Join(stateHome, "devrocket-ecosystem", "link-configs.json")
 	if _, err := os.Stat(statePath); !os.IsNotExist(err) {
@@ -220,6 +246,79 @@ func TestUnlinkConfigsRefusesTamperedTargetsAndRepoMismatch(t *testing.T) {
 	}
 }
 
+func TestUnlinkConfigsPreflightsAllTargetsBeforeRestore(t *testing.T) {
+	repoRoot := repoRoot(t)
+	homeDir := t.TempDir()
+	stateHome := filepath.Join(t.TempDir(), "state-home")
+	mustWriteFile(t, filepath.Join(homeDir, ".tmux.conf"), "original tmux\n")
+
+	link := runScript(t, repoRoot, homeDir, stateHome, "link-configs.sh")
+	if link.err != nil {
+		t.Fatalf("link failed: %v\n%s", link.err, link.stderr)
+	}
+	tmuxLink := filepath.Join(homeDir, ".tmux.conf")
+	herdrLink := filepath.Join(homeDir, ".config", "herdr", "config.toml")
+	if err := os.Remove(herdrLink); err != nil {
+		t.Fatal(err)
+	}
+	mustWriteFile(t, herdrLink, "tampered\n")
+
+	unlink := runScript(t, repoRoot, homeDir, stateHome, "unlink-configs.sh")
+	if unlink.err == nil {
+		t.Fatal("expected tampered Herdr target to fail")
+	}
+	assertSymlink(t, tmuxLink, filepath.Join(repoRoot, "configs", "tmux", "tmux.conf"))
+	assertFileContains(t, herdrLink, "tampered")
+	state := readState(t, stateHome)
+	if len(state.Targets) != 10 {
+		t.Fatalf("expected unchanged state, got %d targets", len(state.Targets))
+	}
+}
+
+func TestUnlinkConfigsLegacyUnscopedAndMissingScopedTargetAreAtomic(t *testing.T) {
+	repoRoot := repoRoot(t)
+	homeDir := t.TempDir()
+	stateHome := filepath.Join(t.TempDir(), "state-home")
+
+	link := runScript(t, repoRoot, homeDir, stateHome, "link-configs.sh")
+	if link.err != nil {
+		t.Fatalf("link failed: %v\n%s", link.err, link.stderr)
+	}
+	statePath := filepath.Join(stateHome, "devrocket-ecosystem", "link-configs.json")
+	data, err := os.ReadFile(statePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lines := strings.Split(string(data), "\n")
+	legacyLines := lines[:0]
+	for _, line := range lines {
+		if !strings.Contains(line, `"id":"herdr"`) {
+			legacyLines = append(legacyLines, line)
+		}
+	}
+	if err := os.WriteFile(statePath, []byte(strings.Join(legacyLines, "\n")), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	missing := runScript(t, repoRoot, homeDir, stateHome, "unlink-configs.sh", "herdr")
+	if missing.err == nil {
+		t.Fatal("expected missing scoped target to fail")
+	}
+	assertSymlink(t, filepath.Join(homeDir, ".tmux.conf"), filepath.Join(repoRoot, "configs", "tmux", "tmux.conf"))
+	if len(readState(t, stateHome).Targets) != 9 {
+		t.Fatal("expected scoped failure to preserve legacy state")
+	}
+
+	unlink := runScript(t, repoRoot, homeDir, stateHome, "unlink-configs.sh")
+	if unlink.err != nil {
+		t.Fatalf("legacy unlink failed: %v\n%s", unlink.err, unlink.stderr)
+	}
+	if _, err := os.Stat(statePath); !os.IsNotExist(err) {
+		t.Fatalf("expected legacy state removal, err=%v", err)
+	}
+	assertSymlink(t, filepath.Join(homeDir, ".config", "herdr", "config.toml"), filepath.Join(repoRoot, "configs", "herdr", "config.toml"))
+}
+
 func TestReadmeDocumentsDeveloperLinkModeWorkflow(t *testing.T) {
 	data, err := os.ReadFile(filepath.Join(repoRoot(t), "README.md"))
 	if err != nil {
@@ -236,6 +335,7 @@ func TestReadmeDocumentsDeveloperLinkModeWorkflow(t *testing.T) {
 		"ghostty-assets",
 		"ghostty-themes",
 		"ghostty-shaders",
+		"herdr",
 		"zshrc",
 		"p10k",
 		"cheatsheet",

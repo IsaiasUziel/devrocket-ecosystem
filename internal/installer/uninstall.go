@@ -39,6 +39,7 @@ func Uninstall() (*UninstallResult, error) {
 	// Remove known config directories if they are now empty.
 	cleanupDirs := []string{
 		filepath.Join(config.ConfigDir(), "atuin"),
+		filepath.Join(config.ConfigDir(), "herdr"),
 		filepath.Join(config.ConfigDir(), "ghostty", "shaders"),
 		filepath.Join(config.ConfigDir(), "ghostty", "themes"),
 		filepath.Join(config.ConfigDir(), "ghostty"),
@@ -51,8 +52,13 @@ func Uninstall() (*UninstallResult, error) {
 		}
 	}
 
-	// Restore from backup when one was recorded.
-	if manifest.BackupDir != "" {
+	// New manifests record exact destination-to-backup mappings. Fall back to
+	// the legacy backup directory for manifests written by older releases.
+	if len(manifest.Backups) > 0 {
+		restored, errs := restoreMappedBackups(manifest.Backups)
+		result.FilesRestored = restored
+		result.Errors = append(result.Errors, errs...)
+	} else if manifest.BackupDir != "" {
 		if _, err := os.Stat(manifest.BackupDir); err == nil {
 			restored, errs := restoreBackup(manifest.BackupDir)
 			result.FilesRestored = restored
@@ -64,6 +70,29 @@ func Uninstall() (*UninstallResult, error) {
 	RemoveManifest()
 
 	return result, nil
+}
+
+func restoreMappedBackups(backups map[string]string) (int, []string) {
+	restored := 0
+	var errors []string
+	for dest, src := range backups {
+		info, err := os.Stat(src)
+		if err != nil {
+			errors = append(errors, fmt.Sprintf("failed to restore %s: %v", dest, err))
+			continue
+		}
+		if info.IsDir() {
+			err = copyDir(src, dest)
+		} else {
+			err = copyFile(src, dest)
+		}
+		if err != nil {
+			errors = append(errors, fmt.Sprintf("failed to restore %s: %v", dest, err))
+		} else {
+			restored++
+		}
+	}
+	return restored, errors
 }
 
 // restoreBackup copies files from backupDir back to their original locations.
