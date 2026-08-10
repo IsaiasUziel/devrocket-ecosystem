@@ -185,11 +185,75 @@ wm_can_start() {
 }
 
 function start_if_needed() {
-    if [[ $- == *i* ]] && command -v "$WM_CMD" >/dev/null 2>&1 && wm_can_start && [[ -t ${__p9k_fd_0:-0} ]]; then
+    if [[ $- == *i* ]] && command -v "$WM_CMD" >/dev/null 2>&1 && wm_can_start && [[ -t 0 ]]; then
        #exec $WM_CMD new-session -A -s "$(basename $(tty))"
         # exec $WM_CMD new-session -A -s "sdg-$(printf '%x' $(date +%s))"
-          exec "$WM_CMD" <&${__p9k_fd_0:-0} >&${__p9k_fd_1:-1} 2>&${__p9k_fd_2:-2}
+          exec "$WM_CMD"
     fi
+}
+
+_mux_autostart_lifecycle_ready() {
+  (( ${+__p9k_instant_prompt_active} == 0 &&
+     ${+__p9k_fd_0} == 0 &&
+     ${+__p9k_fd_1} == 0 &&
+     ${+__p9k_fd_2} == 0 ))
+}
+
+_mux_autostart_cancel() {
+  (( _mux_autostart_pending )) || return
+  typeset -g _mux_autostart_pending=0
+  add-zsh-hook -d precmd _mux_autostart_precmd
+  add-zle-hook-widget -d line-init _mux_autostart_zle_line_init
+}
+
+_mux_autostart_finish() {
+  (( _mux_autostart_pending )) || return
+  _mux_autostart_cancel
+  _mux_autostart_lifecycle_ready || return
+  start_if_needed
+}
+
+_mux_autostart_precmd() {
+  if _mux_autostart_lifecycle_ready; then
+    _mux_autostart_finish
+    return
+  fi
+
+  (( _mux_autostart_retry_scheduled )) && return
+  zmodload zsh/sched
+  typeset -g _mux_autostart_retry_scheduled=1
+  typeset -gi _mux_autostart_retries=1
+  sched +0 _mux_autostart_sched
+}
+
+_mux_autostart_sched() {
+  (( _mux_autostart_pending )) || return
+  if _mux_autostart_lifecycle_ready; then
+    if zle; then
+      _mux_autostart_zle_line_init
+    else
+      _mux_autostart_finish
+    fi
+    return
+  fi
+
+  if (( _mux_autostart_retries-- > 0 )); then
+    sched +0 _mux_autostart_sched
+  else
+    _mux_autostart_zle_line_init
+  fi
+}
+
+_mux_autostart_zle_line_init() {
+  _mux_autostart_cancel
+}
+
+_mux_selector_register_autostart() {
+  [[ $- == *i* ]] || return
+  autoload -Uz add-zsh-hook add-zle-hook-widget
+  typeset -g _mux_autostart_pending=1
+  add-zsh-hook precmd _mux_autostart_precmd
+  add-zle-hook-widget line-init _mux_autostart_zle_line_init
 }
 
 _mux_selector_sync_runtime
@@ -247,7 +311,7 @@ fi
 # This file is gitignored and never committed.
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
 
-start_if_needed
+_mux_selector_register_autostart
 
 # Bun completions
 [[ -s "$HOME/.bun/_bun" ]] && source "$HOME/.bun/_bun"
